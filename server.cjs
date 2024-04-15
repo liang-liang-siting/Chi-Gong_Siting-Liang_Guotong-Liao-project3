@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser')
 
 const app = express();
 
-const mongoDBEndpoint = 'mongodb+srv://gongchineu:3dk8eU1vYmltvgjz@cs5610project3.aanyprg.mongodb.net/?retryWrites=true&w=majority&appName=cs5610project3'
+const mongoDBEndpoint = 'mongodb+srv://gongchineu:3dk8eU1vYmltvgjz@cs5610project3.aanyprg.mongodb.net/password_db?retryWrites=true&w=majority&appName=cs5610project3'
 mongoose.connect(mongoDBEndpoint, {
     useNewUrlParser: true,
 })
@@ -15,6 +15,9 @@ mongoose.connect(mongoDBEndpoint, {
 const db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'Error connecting to MongoDB:'));
+db.once('open', function() {
+    console.log("Connected to MongoDB")
+})
 
 app.use(cors()); 
 app.use(express.json());

@@ -13,7 +13,7 @@ function getAllUser() {
 }
 
 function getUserByUsername(username) {
-    return UserModel.findByUsername(username).exec();
+    return UserModel.findOne({ username }).exec();
 }
 
 module.exports = {
