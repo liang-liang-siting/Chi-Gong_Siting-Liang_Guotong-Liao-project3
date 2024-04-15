@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './passwordManager.css'; 
-import Header from './Header'; 
 import PasswordStorageFile from './PasswordStorageFile';
 import { useNavigate } from 'react-router-dom';
 
-function Password({ isAuthenticated, handleLogout }) {
+function PasswordManager({ isAuthenticated, handleLogout }) {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
   const [alphabet, setAlphabet] = useState(false);
   const [numerics, setNumerics] = useState(false);
   const [symbols, setSymbols] = useState(false);
   const [length, setLength] = useState(8); // Default length
   const [passwordFiles, setPasswordFiles] = useState([]);
+  const [passwords, setPasswords] = useState([]);
   const [sharedUsername, setSharedUsername] = useState('');
   const [showError, setShowError] = useState(false);
   const [sharingRequestSent, setSharingRequestSent] = useState(false);
   const [sharingRequestAccepted, setSharingRequestAccepted] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
 
   const handleLogoutClick = () => {
@@ -65,12 +67,42 @@ function Password({ isAuthenticated, handleLogout }) {
   
     // If password is provided, proceed with storing the data
     try {
-      // API request to store URL/password in the database...
+      const response = await fetch('http://localhost:8000/api/passwords/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: url,
+          password: password,
+          lastUpdated: new Date().toLocaleString() // You can customize the format as needed
+        }),
+      });
+  
+      if (response.ok) {
+        // Password added successfully
+        // You can perform any necessary actions here
+        console.log('Password added successfully');
+        // Clear the input fields after adding the password
+        setUrl('');
+        setPassword('');
+        setSubmitSuccess(true);
+      } else {
+        console.error('Failed to add password:', response.statusText);
+        alert('An error occurred while adding the password');
+      }
     } catch (error) {
-      console.error('Error storing password:', error);
-      alert('An error occurred while storing the password');
+      console.error('Error adding password:', error);
+      alert('An error occurred while adding the password');
     }
   };
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/passwords/')
+      .then(response => response.json())
+      .then(data => setPasswords(data)) 
+      .catch(error => console.error('Error fetching passwords:', error));
+  }, [submitSuccess]); // Trigger useEffect when submit success changes
 
   // Function to delete a password file entry
   const handleDeletePasswordFile = (urlToDelete) => {
@@ -105,10 +137,17 @@ function Password({ isAuthenticated, handleLogout }) {
     setSharingRequestSent(false);
   };
 
+  useEffect(() => {
+    fetch('http://localhost:8000/api/passwords/')
+      .then(response => response.json())
+      .then(data => setPasswords(data)) 
+      .catch(error => console.error('Error fetching passwords:', error));
+  }, []);
   
+
   return (
     <div className="password-container">
-      <h2 className="password-title">Password Page</h2>
+      <h2 className="password-title">Password Manager</h2>
       <p>Welcome to the password manager page!</p>
       <div className="password-input-row">
         <input
@@ -119,13 +158,15 @@ function Password({ isAuthenticated, handleLogout }) {
           className="password-input"
         />
         <input
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="password-input"
         />
-        <button onClick={handleSubmit}>Submit</button>
+        <button className="show-hide-button" onClick={() => setShowPassword(!showPassword)}>
+          {showPassword ? "Hide" : "Show"}
+        </button>
       </div>
       <div className="password-input-row">
         <div className="checkbox-group">
@@ -151,10 +192,14 @@ function Password({ isAuthenticated, handleLogout }) {
         />
         <button onClick={handleSubmit} className="submit-button">Generate Password</button>
       </div>
+      {/* Submit button */}
+      <div className="password-input-row">
+        <button onClick={handleSubmit} className="submit-button">Submit</button>
+      </div>
        {/* Password storage file section */}
       <div className="password-storage-section">
         <h3>Password Storage Files:</h3>
-        {passwordFiles.map((file, index) => (
+        {passwords.map((file, index) => (
           <PasswordStorageFile
             key={index}
             url={file.url}
@@ -190,4 +235,4 @@ function Password({ isAuthenticated, handleLogout }) {
   );
 }
 
-export default Password;
+export default PasswordManager;

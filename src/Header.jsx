@@ -7,6 +7,7 @@ export default function Header({ isAuthenticated, username, onLogout }) {
 
   const isLoginPage = location.pathname === '/login';
   const isSignupPage = location.pathname === '/signup';
+
   const handleLogout = () => {
     console.log('Logging out...'); // Check if the logout function is called
     onLogout();
@@ -22,7 +23,7 @@ export default function Header({ isAuthenticated, username, onLogout }) {
             <button className="dropbtn">Options</button>
             <div className="dropdown-content">
               <a href="#">Profile</a>
-              <a href="#" onClick={onLogout}>Logout</a>
+              <a href="#" onClick={handleLogout}>Logout</a> {/* Use handleLogout function */}
             </div>
           </div>
         </div>

@@ -70,43 +70,4 @@ router.post('/logout', function (request, response) {
 });
 
 
-// router.post('/login', function(request, response) {
-//     const { username, password } = request.body;
-
-//     console.log('Login request received. Username:', username, 'Password:', password);
-
-//     if (!username || !password) {
-//         return response.status(400).json({ message: "Missing username or password." });
-//     }
-
-//     const user = users.find(u => u.username === username && u.password === password);
-
-//     if (!user) {
-//         return response.status(401).json({ message: "Invalid username or password." });
-//     }
-
-//     response.json({ message: "Login successful", username: user.username });
-// });
-
-// router.post('/register', function(request, response) {
-//     const { username, password } = request.body;
-
-//     console.log('Register request received. Username:', username, 'Password:', password);
-
-//     if (!username || !password) {
-//         return response.status(400).json({ message: "Missing username or password." });
-//     }
-
-//     if (users.some(u => u.username === username)) {
-//         return response.status(409).json({ message: "Username already exists." });
-//     }
-
-//     users.push({
-//         username: username,
-//         password: password
-//     });
-
-//     response.status(201).json({ message: "Registration successful", username: username });
-// });
-
 module.exports = router;
