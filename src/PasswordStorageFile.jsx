@@ -3,8 +3,7 @@ import './passwordStorageFile.css';
 
 function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate }) {
   const [newPassword, setNewPassword] = useState('');
-  const [updateSuccess, setUpdateSuccess] = useState(false); // State to track password update success
-
+  const [updateSuccess, setUpdateSuccess] = useState(false); 
   const handleDelete = async () => {
     try {
       const response = await fetch(`http://localhost:8000/api/passwords/delete/${encodeURIComponent(url)}`, {
@@ -15,14 +14,12 @@ function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate })
       });
   
       if (response.ok) {
-        // Password deleted successfully
         console.log('Password deleted successfully:', url); 
   
         if (onDelete) {
           onDelete(url);
         }
 
-        // Refresh screen after password deletion
         window.location.reload();
       } else {
         console.error('Failed to delete password:', response.statusText);
@@ -41,17 +38,15 @@ function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate })
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            newPassword: newPassword,
+            password: newPassword,
           }),
         });
-
+  
         if (response.ok) {
           const updatedPassword = await response.json();
-          onUpdate(url, newPassword, updatedPassword.lastUpdated);
+          onUpdate(url, password, updatedPassword.lastUpdatedTime);
           setNewPassword('');
-          setUpdateSuccess(true); // Set update success status to true
-          window.location.reload();
-          // Refresh screen after 1 second to see the updated password
+          setUpdateSuccess(true);
           setTimeout(() => {
             setUpdateSuccess(false);
           }, 1000);
@@ -63,9 +58,9 @@ function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate })
       }
     }
   };
+  
 
   useEffect(() => {
-    // Refresh screen after update success
     if (updateSuccess) {
       setTimeout(() => {
         window.location.reload();
@@ -92,7 +87,6 @@ function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate })
           onChange={(e) => setNewPassword(e.target.value)}
         />
         <button onClick={handleUpdate}>Update</button>
-        {/* Show message when password update is successful */}
         {updateSuccess && <p>Password updated successfully!</p>}
       </div>
     </div>

@@ -7,7 +7,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [showPassword, setShowPassword] = useState(false); 
   const [alphabet, setAlphabet] = useState(false);
   const [numerics, setNumerics] = useState(false);
   const [symbols, setSymbols] = useState(false);
@@ -19,7 +19,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   const [sharingRequestSent, setSharingRequestSent] = useState(false);
   const [sharingRequestAccepted, setSharingRequestAccepted] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
 
   const handleLogoutClick = () => {
     if (handleLogout) {
@@ -73,20 +72,20 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: url,
-          password: password,
-          lastUpdated: new Date().toLocaleString() // You can customize the format as needed
+          serviceName: url,
+          password: password
         }),
       });
   
       if (response.ok) {
-        // Password added successfully
-        // You can perform any necessary actions here
         console.log('Password added successfully');
-        // Clear the input fields after adding the password
         setUrl('');
         setPassword('');
         setSubmitSuccess(true);
+        window.location.reload();
+        setTimeout(() => {
+          setUpdateSuccess(false);
+        }, 1000);
       } else {
         console.error('Failed to add password:', response.statusText);
         alert('An error occurred while adding the password');
@@ -97,12 +96,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
     }
   };
 
-  useEffect(() => {
-    fetch('http://localhost:8000/api/passwords/')
-      .then(response => response.json())
-      .then(data => setPasswords(data)) 
-      .catch(error => console.error('Error fetching passwords:', error));
-  }, [submitSuccess]); // Trigger useEffect when submit success changes
 
   // Function to delete a password file entry
   const handleDeletePasswordFile = (urlToDelete) => {
@@ -138,12 +131,24 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   };
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/passwords/')
-      .then(response => response.json())
-      .then(data => setPasswords(data)) 
-      .catch(error => console.error('Error fetching passwords:', error));
+    const fetchPasswords = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/passwords'); 
+        if (response.ok) {
+          const data = await response.json();
+          setPasswords(data);
+        } else {
+          console.error('Failed to fetch passwords:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching passwords:', error);
+      }
+    };
+  
+    fetchPasswords();
   }, []);
   
+
 
   return (
     <div className="password-container">
@@ -202,9 +207,18 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         {passwords.map((file, index) => (
           <PasswordStorageFile
             key={index}
-            url={file.url}
+            url={file.serviceName}
             password={file.password}
-            lastUpdated={file.lastUpdated}
+            lastUpdated={new Date(file.lastUpdateTime).toLocaleString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+              second: 'numeric',
+              timeZoneName: 'short'
+            })}
             onDelete={handleDeletePasswordFile}
             onUpdate={handleUpdatePasswordFile}
           />

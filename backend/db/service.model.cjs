@@ -1,6 +1,5 @@
-import serviceSchema from './service.schema.cjs';
-
-const model = require('mongoose').model;
+const { model } = require('mongoose');
+const serviceSchema = require('./service.schema.cjs');
 
 const ServiceModel = model('Service', serviceSchema);
 
@@ -23,7 +22,7 @@ function deleteService(serviceName) {
 function updateService(serviceName, password) {
     const updatedService = {
         password: password,
-        lastUpdateTime: new Date() // Assuming you want to update lastUpdateTime to the current date
+        lastUpdateTime: new Date()
     };
     return ServiceModel.findOneAndUpdate({ serviceName: serviceName }, updatedService, { new: true }).exec();
 }
