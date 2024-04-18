@@ -19,6 +19,8 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   const [sharingRequestSent, setSharingRequestSent] = useState(false);
   const [sharingRequestAccepted, setSharingRequestAccepted] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredPasswords, setFilteredPasswords] = useState([]);
 
   const handleLogoutClick = () => {
     if (handleLogout) {
@@ -147,8 +149,14 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   
     fetchPasswords();
   }, []);
-  
 
+  useEffect(() => {
+    // Filter passwords based on search query
+    const filtered = passwords.filter(password => password.serviceName.toLowerCase().includes(searchQuery.toLowerCase()));
+    setFilteredPasswords(filtered);
+  }, [searchQuery, passwords]);
+
+  
 
   return (
     <div className="password-container">
@@ -204,7 +212,15 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
        {/* Password storage file section */}
       <div className="password-storage-section">
         <h3>Password Storage Files:</h3>
-        {passwords.map((file, index) => (
+        <input
+          type="text"
+          placeholder="Search by service name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-bar"
+        />
+        
+        {filteredPasswords.map((file, index) => (
           <PasswordStorageFile
             key={index}
             url={file.serviceName}
@@ -223,7 +239,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
             onUpdate={handleUpdatePasswordFile}
           />
         ))}
-      </div>
+        </div>
       {/* Sharing section */}
       <div className="password-sharing-section">
         <h3>Share Passwords:</h3>

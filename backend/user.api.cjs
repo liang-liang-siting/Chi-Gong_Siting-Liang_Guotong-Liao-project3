@@ -2,16 +2,10 @@ const express = require('express');
 const router = express.Router();
 const UserModel = require('./db/user.model.cjs');
 
-// const users = [
-//     {username: 'hunter', password: 'hunter123'},
-//     {username: 'alex', password: 'alex456'}
-// ];
-
 router.get('/', function(request, response) {
     const startOfUsername = request.query.startOfUsername;
 
     if (startOfUsername) {
-        // const foundUsers = users.filter(user => user.username.startsWith(startOfUsername));
         const foundUsers = UserModel.getUserByUsername(startOfUsername);
         return response.json(foundUsers);
     } else {
@@ -21,7 +15,6 @@ router.get('/', function(request, response) {
 
 router.get('/:username', function(request, response) {
     const username = request.params.username;
-    // const user = users.find(user => user.username === username);
     const user = UserModel.getUserByUsername(username);
 
     if (user) {
@@ -38,7 +31,6 @@ router.post('/login', async function(request, response) {
         return response.status(400).json({ message: "Missing username or password." });
     }
 
-    // const user = users.find(u => u.username === username && u.password === password);
     const user = await UserModel.getUserByUsername(username);
     console.log(user);
 

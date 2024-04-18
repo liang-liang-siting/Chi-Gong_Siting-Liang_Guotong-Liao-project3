@@ -4,6 +4,7 @@ import './passwordStorageFile.css';
 function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate }) {
   const [newPassword, setNewPassword] = useState('');
   const [updateSuccess, setUpdateSuccess] = useState(false); 
+  
   const handleDelete = async () => {
     try {
       const response = await fetch(`http://localhost:8000/api/passwords/delete/${encodeURIComponent(url)}`, {
