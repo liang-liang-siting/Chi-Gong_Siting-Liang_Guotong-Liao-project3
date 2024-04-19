@@ -1,25 +1,8 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const router = express.Router();
 const UserModel = require('./db/user.model.cjs');
-
-// Will be replaced with a ENV variable in production
-const SECRET_KEY = 'fowijf9014w80f23ofh0w9f';
-
-// Middleware to check if user is authenticated
-const authHandler = (request, response, next) => {
-  const token = request.cookies.token;
-  if (!token) {
-      return response.status(401).json({ message: "Unauthorized" });
-  }
-  jwt.verify(token, SECRET_KEY, function(err, decoded) {
-      if (err) {
-          return response.status(401).json({ message: "Unauthorized" });
-      }
-      request.username = decoded.username;
-      next();
-  });
-}
+const authHandler = require('./auth.cjs').authHandler;
+const getToken = require('./auth.cjs').getToken;
 
 // Will be called when the page is refreshed
 router.get('/authenticate', authHandler, async function(request, response) {
@@ -60,7 +43,7 @@ router.post('/login', async function(request, response) {
     }
 
     // Set user session cookie
-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '14d' });
+    const token = getToken(username);
     response.cookie('token', token);
     response.json({ message: "Login successful", username });
 });
