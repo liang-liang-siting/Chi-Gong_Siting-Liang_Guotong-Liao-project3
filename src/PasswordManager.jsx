@@ -113,7 +113,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
     } else {
       // If password is provided, proceed with storing the data
       try {
-        const response = await fetch('http://localhost:8000/api/passwords/add', {
+        const response = await fetch('/api/passwords/add', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   useEffect(() => {
     const fetchPasswords = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/passwords'); 
+        const response = await fetch('/api/passwords'); 
         if (response.ok) {
           const data = await response.json();
           setPasswords(data);
@@ -319,7 +319,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         </div>
       )}
       {/* Logout button */}
-      <button onClick={handleLogoutClick} className="logout-button">Logout</button>
+      {/* <button onClick={handleLogoutClick} className="logout-button">Logout</button> */}
     </div>
   );
 }
