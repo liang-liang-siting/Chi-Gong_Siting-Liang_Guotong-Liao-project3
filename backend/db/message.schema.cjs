@@ -1,25 +1,24 @@
 const Schema = require('mongoose').Schema;
 
 module.exports = new Schema({
-    userName: {
+    // for identifying the password
+    serviceUrl: {
         type: String,
         required: true,
     },
-    serviceName: {
+    // display name of the sender
+    senderUserName: {
         type: String,
         required: true,
     },
-    password: {
+    // display name of the receiver
+    receiverUserName: {
         type: String,
         required: true,
     },
-    lastUpdateTime: {
+    // seems unnecessary
+    sharingTime: {
         type: Date,
         default: Date.now
-    },
-    sharedWith: {
-        // list of usernames
-        type: [String],
-        default: []
     }
-}, { collection: 'storedpassword' });
+}, { collection: 'message' });

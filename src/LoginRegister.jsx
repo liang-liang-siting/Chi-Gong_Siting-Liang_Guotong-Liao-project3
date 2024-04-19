@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react'
 import { UserContext } from './Context'
 import { useNavigate } from 'react-router-dom'
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types'
 import './index.css'
 
 function LoginRegister({ isRegistering }) {
@@ -87,7 +87,6 @@ function LoginRegister({ isRegistering }) {
         console.log('Registration successful')
         setSuccess(true)
         navigate('/login')
-        // setIsAuthenticated(true)
       } else {
         // Handle registration failure
         const data = await response.json()
@@ -149,9 +148,7 @@ function LoginRegister({ isRegistering }) {
         {isRegistering ? 'Already have an account?' : "Don't have an account?"}
         <span
           className='toggle-link'
-          onClick={() =>
-            (window.location.href = isRegistering ? '/login' : '/signup')
-          }
+          onClick={() => navigate(isRegistering ? '/login' : '/signup')}
         >
           {isRegistering ? 'Login' : 'Sign Up'}
         </span>
