@@ -1,25 +1,40 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 const UserModel = require('./db/user.model.cjs');
 
-// const users = [
-//     {username: 'hunter', password: 'hunter123'},
-//     {username: 'alex', password: 'alex456'}
-// ];
+// Will be replaced with a ENV variable in production
+const SECRET_KEY = 'fowijf9014w80f23ofh0w9f';
 
-router.get('/', function(request, response) {
-    const startOfUsername = request.query.startOfUsername;
+// Middleware to check if user is authenticated
+const authHandler = (request, response, next) => {
+  const token = request.cookies.token;
+  if (!token) {
+      return response.status(401).json({ message: "Unauthorized" });
+  }
+  jwt.verify(token, SECRET_KEY, function(err, decoded) {
+      if (err) {
+          return response.status(401).json({ message: "Unauthorized" });
+      }
+      request.username = decoded.username;
+      next();
+  });
+}
 
-    if (startOfUsername) {
-        // const foundUsers = users.filter(user => user.username.startsWith(startOfUsername));
-        const foundUsers = UserModel.getUserByUsername(startOfUsername);
-        return response.json(foundUsers);
-    } else {
-        return response.json(UserModel.getAllUser());
-    }
+// Will be called when the page is refreshed
+router.get('/authenticate', authHandler, async function(request, response) {
+    const userName = request.username;
+    response.json({ username: userName });
 });
 
-router.get('/:username', function(request, response) {
+// Used to get all users for password sharing
+router.get('/', authHandler, async function(request, response) {
+    const users = await UserModel.getAllUser();
+    response.json(users);
+});
+
+// TODO: delete this method, seems unnecessary
+router.get('/:username', authHandler, function(request, response) {
     const username = request.params.username;
     // const user = users.find(user => user.username === username);
     const user = UserModel.getUserByUsername(username);
@@ -43,12 +58,13 @@ router.post('/login', async function(request, response) {
     console.log(user);
 
     if (!user || user.password !== password) {
-        return response.status(401).json({ message: "Invalid username or password." });
+        return response.status(500).json({ message: "Invalid username or password." });
     }
 
     // Set user session cookie
-    response.cookie('userSession', username, { httpOnly: true });
-    response.json({ message: "Login successful", username: user.username });
+    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '14d' });
+    response.cookie('token', token);
+    response.json({ message: "Login successful", username });
 });
 
 router.post('/register', async function(request, response) {
@@ -74,8 +90,8 @@ router.post('/register', async function(request, response) {
 
 router.post('/logout', function (request, response) {
     // Clear user session cookie
-    response.clearCookie('userSession');
-    response.json({ message: "Logout successful" });
+    response.clearCookie('token');
+    response.json({ message: "Logout successfully" });
 });
 
 

@@ -7,7 +7,7 @@ function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate })
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/passwords/delete/${encodeURIComponent(url)}`, {
+      const response = await fetch(`/api/passwords/delete/${encodeURIComponent(url)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate })
   const handleUpdate = async () => {
     if (onUpdate && newPassword.trim() !== '') {
       try {
-        const response = await fetch(`http://localhost:8000/api/passwords/update/${encodeURIComponent(url)}`, {
+        const response = await fetch(`/api/passwords/update/${encodeURIComponent(url)}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
