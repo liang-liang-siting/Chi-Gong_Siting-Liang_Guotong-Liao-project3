@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react'
-import UserContext from './Context'
+import { UserContext } from './Context'
 import CopyIcon from './assets/copy.svg?react'
 import ShareIcon from './assets/share.svg?react'
 import DeleteIcon from './assets/delete.svg?react'

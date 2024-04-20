@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import UserContext from './Context';
+import { UserContext } from './Context';
 import './passwordManager.css'; 
 import PasswordStorageFile from './PasswordStorageFile';
 import { useNavigate } from 'react-router-dom';
