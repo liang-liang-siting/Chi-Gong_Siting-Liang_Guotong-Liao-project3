@@ -5,7 +5,7 @@ import PasswordStorageFile from './PasswordStorageFile';
 import { useNavigate } from 'react-router-dom';
 
 function PasswordManager({ isAuthenticated, handleLogout }) {
-  const { loginUsername } = useContext(UserContext);
+  const { loginUserName } = useContext(UserContext);
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -145,7 +145,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
       },
       body: JSON.stringify({
         serviceUrl: serviceUrl,
-        receiverUserName: loginUsername,
+        receiverUserName: loginUserName,
       }),
     });
 
@@ -171,14 +171,14 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      const response = fetch(`/api/messages/${loginUsername}`)
+      const response = await fetch(`/api/message/${loginUserName}`)
       const data = await response.json();
       console.log(data);
       setMessages(data);
     }, 2000);
     // Clear interval on unmount
     return () => clearInterval(interval);
-  }, [loginUsername]);
+  }, [loginUserName]);
 
   return (
     <div className="password-container">

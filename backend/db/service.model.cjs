@@ -1,8 +1,8 @@
-import serviceSchema from './service.schema.cjs';
+const ServiceSchema = require('./service.schema.cjs');
 
 const model = require('mongoose').model;
 
-const ServiceModel = model('Service', serviceSchema);
+const ServiceModel = model('Service', ServiceSchema);
 
 function insertService(service) {
     return ServiceModel.create(service);

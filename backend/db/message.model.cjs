@@ -1,8 +1,8 @@
-import messageSchema from "./message.schema.cjs";
+const MessageSchema = require('./message.schema.cjs');
 
 const model = require('mongoose').model;
 
-const MessageModel = model('Message', messageSchema);
+const MessageModel = model('Message', MessageSchema);
 
 function insertMessage(message) {
     return MessageModel.create(message);

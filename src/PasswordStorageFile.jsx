@@ -13,7 +13,7 @@ function PasswordStorageFile({
   onDelete,
   onUpdate,
 }) {
-  const { loginUsername } = useContext(UserContext)
+  const { loginUserName } = useContext(UserContext)
   const [newPassword, setNewPassword] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false) // State to track password update success
@@ -112,7 +112,7 @@ function PasswordStorageFile({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          senderUserName: loginUsername,
+          senderUserName: loginUserName,
           receiverUserName: shareUsername,
           serviceUrl: url,
           sharingTime: new Date(),

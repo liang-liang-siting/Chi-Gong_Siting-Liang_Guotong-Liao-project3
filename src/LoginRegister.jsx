@@ -7,7 +7,6 @@ import './index.css'
 function LoginRegister({ isRegistering }) {
   const navigate = useNavigate()
   const { loginUserName, setLoginUserName } = useContext(UserContext)
-
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
