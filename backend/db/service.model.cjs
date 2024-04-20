@@ -20,12 +20,12 @@ function deleteService(serviceName) {
     return ServiceModel.deleteOne({ serviceName: serviceName }).exec();
 }
 
-function updateService(serviceName, password) {
+function updateService(service) {
     const updatedService = {
-        password: password,
+        ...service,
         lastUpdateTime: new Date() // Assuming you want to update lastUpdateTime to the current date
     };
-    return ServiceModel.findOneAndUpdate({ serviceName: serviceName }, updatedService, { new: true }).exec();
+    return ServiceModel.findOneAndUpdate({ serviceName: service.serviceName }, updatedService, { new: true }).exec();
 }
 
 

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import UserContext from './Context';
 import './passwordManager.css'; 
 import PasswordStorageFile from './PasswordStorageFile';
 import { useNavigate } from 'react-router-dom';
 
 function PasswordManager({ isAuthenticated, handleLogout }) {
+  const { loginUsername } = useContext(UserContext);
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -126,24 +128,57 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
     setSharingRequestSent(true);
   };
 
-  const handleAcceptRequest = () => {
-    // Simulate accepting the sharing request
-    setSharingRequestAccepted(true);
-  };
-
-  const handleRejectRequest = () => {
-    // Simulate rejecting the sharing request
-    setSharedUsername('');
-    setSharingRequestSent(false);
-  };
-
   useEffect(() => {
     fetch('/api/passwords/')
       .then(response => response.json())
       .then(data => setPasswords(data)) 
       .catch(error => console.error('Error fetching passwords:', error));
   }, []);
-  
+
+  const [messages, setMessages] = useState([]);
+
+  const handleAcceptSharing = async (serviceUrl) => {
+    const response = await fetch(`/api/message/accept/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        serviceUrl: serviceUrl,
+        receiverUserName: loginUsername,
+      }),
+    });
+
+    if (response.ok) {
+      // TODO: Update current password list
+      console.log('Sharing request accepted successfully');
+    } else {
+      console.error('Failed to accept sharing request:', response.statusText);
+    }
+  }
+
+  const handleRejectSharing = async (serviceUrl) => {
+    // Simulate rejecting the sharing request
+    const response = await fetch(`/api/message/delete/${serviceUrl}`, {
+      method: 'DELETE',
+    });
+    if (response.ok) {
+      console.log('Sharing request rejected successfully');
+    } else {
+      console.error('Failed to reject sharing request:', response.statusText);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const response = fetch(`/api/messages/${loginUsername}`)
+      const data = await response.json();
+      console.log(data);
+      setMessages(data);
+    }, 2000);
+    // Clear interval on unmount
+    return () => clearInterval(interval);
+  }, [loginUsername]);
 
   return (
     <div className="password-container">
@@ -222,13 +257,28 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         <button onClick={handleShareRequest}>Share</button>
         {showError && <p>Error: Please enter a valid username</p>}
       </div>
-      {sharingRequestSent && !sharingRequestAccepted && (
+      {/* {sharingRequestSent && !sharingRequestAccepted && (
         <div>
           <p>{sharedUsername} wants to share their passwords with you.</p>
           <button onClick={handleAcceptRequest}>Accept</button>
           <button onClick={handleRejectRequest}>Reject</button>
         </div>
-      )}
+      )} */}
+      {/* Messages section */}
+      <div className="messages-section">
+        <h3>Sharing Requests:</h3>
+        <ul>
+          {messages.map((message, index) => (
+            <li key={index}>
+              <div>
+                <strong>{message.senderUserName}</strong> wants to share the password of <strong>{message.serviceUrl}</strong> with you.
+              </div>
+              <button onClick={() => handleRejectSharing(message.serviceUrl)}>Reject</button>
+              <button onClick={() => handleAcceptSharing(message.serviceUrl)}>Accept</button>
+            </li>
+          ))}
+        </ul>
+      </div>
       {/* Logout button */}
       {/* <button onClick={handleLogoutClick} className="logout-button">Logout</button> */}
     </div>

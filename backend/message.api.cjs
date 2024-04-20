@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const MessageModel = require('./db/message.model.cjs');
+const ServiceModel = require('./db/service.model.cjs');
 
 // Get messages by receiver username
 router.get('/:receiverUserName', async function(request, response) {
@@ -19,6 +20,24 @@ router.post('/add', async function(request, response) {
         const message = request.body;
         const result = await MessageModel.insertMessage(message);
         response.status(201).json(result);
+    } catch (error) {
+        response.status(500).json({ message: error.message });
+    }
+});
+
+router.post('/accept', async function(request, response) {
+    try {
+        const serviceUrl = request.body.serviceUrl;
+        const receiverUserName = request.body.receiverUserName;
+        const passwordEntry = await ServiceModel.getServiceByName(serviceUrl);
+        const newPassWordEntry = {
+            ...passwordEntry,
+            sharingWith: [...passwordEntry.sharingWith, receiverUserName],
+        };
+        await ServiceModel.updateService(newPassWordEntry);
+        // delete the message
+        await MessageModel.deleteMessageByServiceUrl(serviceUrl);
+        response.status(200).json({ message: 'Password shared successfully' });
     } catch (error) {
         response.status(500).json({ message: error.message });
     }
