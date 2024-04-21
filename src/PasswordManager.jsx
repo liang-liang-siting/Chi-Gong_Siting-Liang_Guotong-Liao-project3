@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { UserContext } from './Context';
 import './passwordManager.css'; 
 import PasswordStorageFile from './PasswordStorageFile';
-import { useNavigate } from 'react-router-dom';
 
-function PasswordManager({ isAuthenticated, handleLogout }) {
+function PasswordManager() {
   const { loginUserName } = useContext(UserContext);
-  const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
@@ -16,19 +14,8 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   const [length, setLength] = useState(8); // Default length
   const [passwordFiles, setPasswordFiles] = useState([]);
   const [passwords, setPasswords] = useState([]);
-  const [sharedUsername, setSharedUsername] = useState('');
-  const [showError, setShowError] = useState(false);
-  const [sharingRequestSent, setSharingRequestSent] = useState(false);
-  const [sharingRequestAccepted, setSharingRequestAccepted] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-
-  const handleLogoutClick = () => {
-    if (handleLogout) {
-      handleLogout(); // Call the handleLogout function passed as prop
-    }
-    navigate('/login'); // Redirect to the login page
-  };
 
   const handleSubmit = async () => {
     // Validation checks
@@ -75,9 +62,10 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: url,
+          serviceName: url,
           password: password,
-          lastUpdated: new Date().toLocaleString() // You can customize the format as needed
+          userName: loginUserName,
+          lastUpdateTime: new Date().toLocaleString() // You can customize the format as needed
         }),
       });
   
@@ -117,26 +105,15 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
     // Logic to update the password file entry...
   };
 
-  const handleShareRequest = () => {
-    // Validation checks for sharing
-    if (!sharedUsername.trim() || sharedUsername === isAuthenticated) {
-      setShowError(true);
-      return;
-    }
-
-    // Simulate sharing request
-    setSharingRequestSent(true);
-  };
-
   useEffect(() => {
-    fetch('/api/passwords/')
+    if (!loginUserName) return;
+    fetch(`/api/passwords/${loginUserName}`)
       .then(response => response.json())
       .then(data => setPasswords(data)) 
       .catch(error => console.error('Error fetching passwords:', error));
-  }, []);
+  }, [loginUserName]);
 
   const [messages, setMessages] = useState([]);
-
   const handleAcceptSharing = async (serviceUrl) => {
     const response = await fetch(`/api/message/accept/`, {
       method: 'POST',
@@ -170,7 +147,9 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   };
 
   useEffect(() => {
+    // query messages every 2 seconds
     const interval = setInterval(async () => {
+      if (!loginUserName) return;
       const response = await fetch(`/api/message/${loginUserName}`)
       const data = await response.json();
       console.log(data);
@@ -237,33 +216,14 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         {passwords.map((file, index) => (
           <PasswordStorageFile
             key={index}
-            url={file.url}
+            url={file.serviceName}
             password={file.password}
-            lastUpdated={file.lastUpdated}
+            lastUpdated={file.lastUpdatedTime}
             onDelete={handleDeletePasswordFile}
             onUpdate={handleUpdatePasswordFile}
           />
         ))}
       </div>
-      {/* Sharing section */}
-      <div className="password-sharing-section">
-        <h3>Share Passwords:</h3>
-        <input
-          type="text"
-          placeholder="Username to share"
-          value={sharedUsername}
-          onChange={(e) => setSharedUsername(e.target.value)}
-        />
-        <button onClick={handleShareRequest}>Share</button>
-        {showError && <p>Error: Please enter a valid username</p>}
-      </div>
-      {/* {sharingRequestSent && !sharingRequestAccepted && (
-        <div>
-          <p>{sharedUsername} wants to share their passwords with you.</p>
-          <button onClick={handleAcceptRequest}>Accept</button>
-          <button onClick={handleRejectRequest}>Reject</button>
-        </div>
-      )} */}
       {/* Messages section */}
       <div className="messages-section">
         <h3>Sharing Requests:</h3>
@@ -279,8 +239,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           ))}
         </ul>
       </div>
-      {/* Logout button */}
-      {/* <button onClick={handleLogoutClick} className="logout-button">Logout</button> */}
     </div>
   );
 }

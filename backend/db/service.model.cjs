@@ -20,6 +20,15 @@ function deleteService(serviceName) {
     return ServiceModel.deleteOne({ serviceName: serviceName }).exec();
 }
 
+function getServiceByUserName(userName) {
+    return ServiceModel.find({ 
+        $or: [
+            { userName: userName },
+            { sharedWith: userName }
+        ]
+    }).exec();
+}
+
 function updateService(service) {
     const updatedService = {
         ...service,
@@ -35,4 +44,5 @@ module.exports = {
     updateService,
     insertService, 
     getAllServices,
+    getServiceByUserName,
 }

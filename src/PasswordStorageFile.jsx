@@ -92,6 +92,16 @@ function PasswordStorageFile({
     setInfoMessage(shareUsername) // Reset info message
     setShowShareInput(false) // Hide share input
 
+    if (!shareUsername) {
+      setInfoMessage('Please enter a username!')
+      return
+    }
+
+    if (shareUsername === loginUserName) {
+      setInfoMessage('Cannot share password with yourself!')
+      return
+    }
+
     try {
       const response = await fetch(`/api/user/${shareUsername}`)
 
@@ -113,7 +123,7 @@ function PasswordStorageFile({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           senderUserName: loginUserName,
-          receiverUserName: shareUsername,
+          // receiverUserName: shareUsername,
           serviceUrl: url,
           sharingTime: new Date(),
         }),
