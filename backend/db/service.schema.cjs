@@ -1,7 +1,7 @@
 const Schema = require('mongoose').Schema;
 
 module.exports = new Schema({
-    userName: {
+    username: {
         type: String,
         required: true,
     },

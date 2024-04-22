@@ -1,61 +1,98 @@
 const express = require('express');
 const router = express.Router();
+const ServiceModel = require('./db/service.model.cjs');
 
-const passwords = [
-    { url: 'https://example.com', password: 'password123', lastUpdated: new Date().toLocaleString() },
-    { url: 'https://example.net', password: 'password456', lastUpdated: new Date().toLocaleString() }
-];
+router.get('/', async function(request, response) {
+    const username = request.query.username; 
 
-// Get all passwords
-router.get('/', (req, res) => {
-    res.json(passwords);
-});
-
-// Add new URL & password
-router.post('/add', (req, res) => {
-    const { url, password } = req.body;
-
-    if (!url || !password) {
-        return res.status(400).json({ message: "Missing URL or password." });
+    if (!username) {
+        return response.status(400).json({ message: "Missing username." }); 
     }
 
-    // Check if the URL already exists
-    const existingPassword = passwords.find(pwd => pwd.url === url);
-    if (existingPassword) {
-        return res.status(409).json({ message: "URL already exists." });
-    }
-
-    // Add the new password to the password list
-    passwords.push({ url, password, lastUpdated: new Date().toLocaleString() });
-
-    res.status(201).json({ message: "Password added successfully", url });
-});
-
-// Update password by URL
-router.put('/update/:url', (req, res) => {
-    const url = decodeURIComponent(req.params.url); 
-    const newPassword = req.body.newPassword;
-
-    const index = passwords.findIndex(pwd => pwd.url === url);
-    if (index === -1) {
-        res.status(404).json({ message: 'Password not found' });
-    } else {
-        passwords[index].password = newPassword;
-        passwords[index].lastUpdated = new Date().toLocaleString(); 
-        res.json({ message: 'Password updated successfully', password: passwords[index] });
+    try {
+        const foundPasswords = await ServiceModel.getPasswordsByUsername(username);
+        return response.json(foundPasswords);
+    } catch (error) {
+        console.log(error);
+        return response.status(500).json({ message: "An error occurred while retrieving passwords." });
     }
 });
 
-// Delete password by URL
-router.delete('/delete/:url', (req, res) => {
-    const url = decodeURIComponent(req.params.url); 
-    const index = passwords.findIndex(pwd => pwd.url === url);
-    if (index === -1) {
-        res.status(404).json({ message: 'Password not found' });
-    } else {
-        passwords.splice(index, 1);
-        res.json({ message: 'Password deleted successfully' });
+
+router.post('/add', async function(request, response) {
+    const { serviceName, password, username } = request.body; 
+
+    try {
+        if (!serviceName || !password || !username) {
+            return response.status(400).json({ message: "Missing serviceName, password, or username." });
+        }
+
+        const existingPassword = await ServiceModel.getServiceByName(serviceName, username);
+        if (existingPassword) {
+            return response.status(409).json({ message: "URL already exists." });
+        }
+
+        const serviceToAdd = {
+            serviceName: serviceName,
+            password: password,
+            username: username, 
+            lastUpdateTime: new Date().toLocaleString()
+        };
+
+        const addedPassword = await ServiceModel.insertService(serviceToAdd);
+        return response.status(201).json({ message: "Password added successfully", serviceName });
+    } catch (error) {
+        console.log(error);
+        return response.status(500).json({ message: "An error occurred while adding password." });
     }
 });
+
+router.put('/update/:serviceName', async function(request, response) {
+    const serviceName = decodeURIComponent(request.params.serviceName); 
+    const newPassword = request.body.password;
+    const username = request.body.username; 
+
+    try {
+        const existingPassword = await ServiceModel.getServiceByName(serviceName, username);
+        if (!existingPassword) {
+            return response.status(404).json({ message: "Password not found." });
+        }
+
+        if (existingPassword.username !== username) {
+            return response.status(403).json({ message: "You are not authorized to update this password." });
+        }
+
+        const updatedPassword = await ServiceModel.updateService(serviceName, newPassword, username); 
+        updatedPassword.lastUpdateTime = Date.now(); 
+        return response.json({ message: 'Password updated successfully', password: updatedPassword });
+    } catch (error) {
+        console.log(error);
+        return response.status(500).json({ message: "An error occurred while updating password." });
+    }
+});
+
+
+router.delete('/delete/:serviceName', async function(request, response) {
+    const serviceName = decodeURIComponent(request.params.serviceName); 
+    const username = request.body.username; 
+
+    try {
+        const existingPassword = await ServiceModel.getServiceByName(serviceName, username);
+        if (!existingPassword) {
+            return response.status(404).json({ message: "Password not found." });
+        }
+
+        if (existingPassword.username !== username) {
+            return response.status(403).json({ message: "You are not authorized to delete this password." });
+        }
+
+        await ServiceModel.deleteService(serviceName, username); // Pass username as argument
+        return response.json({ message: 'Password deleted successfully' });
+    } catch (error) {
+        console.log(error);
+        return response.status(500).json({ message: "An error occurred while deleting password." });
+    }
+});
+
 
 module.exports = router;
