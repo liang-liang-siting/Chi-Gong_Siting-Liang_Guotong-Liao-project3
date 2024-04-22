@@ -73,12 +73,13 @@ router.put('/update/:serviceName', async function(request, response) {
 });
 
 
-router.delete('/delete/:serviceName', async function(request, response) {
-    const serviceName = decodeURIComponent(request.params.serviceName); 
+router.delete('/delete', async function(request, response) {
+    // const url = decodeURIComponent(request.params.serviceName);
     const username = request.body.username; 
+    const url = request.body.url;
 
     try {
-        const existingPassword = await PasswordService.getServiceByName(serviceName, username);
+        const existingPassword = await PasswordService.getServiceByName(url, username);
         if (!existingPassword) {
             return response.status(404).json({ message: "Password not found." });
         }
@@ -87,7 +88,7 @@ router.delete('/delete/:serviceName', async function(request, response) {
             return response.status(403).json({ message: "You are not authorized to delete this password." });
         }
 
-        await PasswordService.deleteService(serviceName, username); // Pass username as argument
+        await PasswordService.deleteService(url, username); // Pass username as argument
         return response.json({ message: 'Password deleted successfully' });
     } catch (error) {
         console.log(error);
