@@ -5,13 +5,13 @@ import { UserContext } from './Context'
 import './index.css'
 
 export default function App({ children }) {
-  const [loginUserName, setLoginUserName] = useState('')
+  const [loginUsername, setLoginUsername] = useState('')
 
   return (
     <UserContext.Provider
       value={{
-        loginUserName,
-        setLoginUserName,
+        loginUsername,
+        setLoginUsername,
       }}
     >
       <Header />

@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const MessageModel = require('./db/message.model.cjs');
-const ServiceModel = require('./db/service.model.cjs');
+const uuid = require('uuid');
+const MessageService = require('./db/message.model.cjs');
+const PasswordService = require('./db/password.model.cjs');
 
 // Get messages by receiver username
 router.get('/:receiverUserName', async function(request, response) {
     try {
         const receiverUserName = request.params.receiverUserName;
-        const messages = await MessageModel.getMessageByReceiverUserName(receiverUserName);
+        const messages = await MessageService.getMessageByReceiverUserName(receiverUserName);
         response.json(messages);
     } catch (error) {
         response.status(500).json({ message: error.message });
@@ -17,8 +18,12 @@ router.get('/:receiverUserName', async function(request, response) {
 // Add new message
 router.post('/add', async function(request, response) {
     try {
+        const id = uuid.v4();
         const message = request.body;
-        const result = await MessageModel.insertMessage(message);
+        const result = await MessageService.insertMessage({
+            ...message,
+            id: id,
+        });
         response.status(201).json(result);
     } catch (error) {
         response.status(500).json({ message: error.message });
@@ -27,27 +32,29 @@ router.post('/add', async function(request, response) {
 
 router.post('/accept', async function(request, response) {
     try {
-        const serviceUrl = request.body.serviceUrl;
-        const receiverUserName = request.body.receiverUserName;
-        const passwordEntry = await ServiceModel.getServiceByName(serviceUrl);
+        const url = request.body.url;
+        const id = request.body.id;
+        const senderUsername = request.body.senderUsername;
+        const receiverUsername = request.body.receiverUsername;
+        const passwordEntry = await PasswordService.getPasswordByName(url, senderUsername);
         const newPassWordEntry = {
             ...passwordEntry,
-            sharingWith: [...passwordEntry.sharingWith, receiverUserName],
+            sharingWith: [...passwordEntry.sharingWith, receiverUsername],
         };
-        await ServiceModel.updateService(newPassWordEntry);
+        await PasswordService.updatePassword(newPassWordEntry);
         // delete the message
-        await MessageModel.deleteMessageByServiceUrl(serviceUrl);
+        await MessageService.deleteMessage(id);
         response.status(200).json({ message: 'Password shared successfully' });
     } catch (error) {
         response.status(500).json({ message: error.message });
     }
 });
 
-// Delete message by service URL
-router.delete('/delete/:serviceUrl', async function(request, response) {
+// Delete message by id
+router.delete('/delete/:id', async function(request, response) {
     try {
-        const serviceUrl = request.params.serviceUrl;
-        const result = await MessageModel.deleteMessageByServiceUrl(serviceUrl);
+        const id = request.params.id;
+        const result = await MessageService.deleteMessage(id);
         response.json(result);
     } catch (error) {
         response.status(500).json({ message: error.message });

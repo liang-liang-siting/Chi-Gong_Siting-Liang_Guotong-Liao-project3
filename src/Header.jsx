@@ -7,7 +7,7 @@ import './index.css'
 export default function Header() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { loginUserName, setLoginUserName } = useContext(UserContext)
+  const { loginUsername, setLoginUsername } = useContext(UserContext)
 
   const isLoginPage = location.pathname === '/login'
   const isSignupPage = location.pathname === '/signup'
@@ -17,7 +17,7 @@ export default function Header() {
       .then((response) => {
         if (response.ok) {
           console.log('Logged out successfully')
-          setLoginUserName('')
+          setLoginUsername('')
           navigate('/')
         } else {
           console.error('Failed to log out')
@@ -31,12 +31,12 @@ export default function Header() {
   // when the component mounts, check if the user is authenticated
   useEffect(() => {
     const authenticate = async () => {
-      if (loginUserName) return
+      if (loginUsername) return
       try {
         const response = await fetch('/api/users/authenticate')
         if (response.ok) {
           const data = await response.json()
-          setLoginUserName(data.username)
+          setLoginUsername(data.username)
           console.log('Authenticated as', data.username)
         } else {
           console.log('Not authenticated')
@@ -46,17 +46,17 @@ export default function Header() {
       }
     }
     authenticate()
-  }, [loginUserName, setLoginUserName])
+  }, [loginUsername, setLoginUsername])
 
   return (
     <div className='header'>
       <NavLink to='/' className='link'>
         Home
       </NavLink>
-      {loginUserName ? (
+      {loginUsername ? (
         <div className='user-menu'>
           <div className='dropdown'>
-            <span className='username'>{loginUserName}</span>
+            <span className='username'>{loginUsername}</span>
             <div className='dropdown-content'>
               <a onClick={() => navigate('/password')}>Passwords</a>
               <a onClick={handleLogout}>Logout</a>

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import { useState, useEffect, useContext } from 'react'
 import { UserContext } from './Context'
 import CopyIcon from './assets/copy.svg?react'
@@ -9,11 +10,11 @@ import './passwordStorageFile.css'
 function PasswordStorageFile({
   url,
   password,
-  lastUpdated,
+  lastUpdatedTime,
   onDelete,
   onUpdate,
 }) {
-  const { loginUserName } = useContext(UserContext)
+  const { loginUsername } = useContext(UserContext)
   const [newPassword, setNewPassword] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false) // State to track password update success
@@ -24,69 +25,65 @@ function PasswordStorageFile({
 
   const handleDelete = async () => {
     try {
-        const encodedUrl = encodeURIComponent(url);
-        const response = await fetch(`/api/passwords/delete/${encodedUrl}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: loginUserName, 
-            }),
-        });
-    
-        if (response.ok) {
-            console.log('Password deleted successfully:', url);
-    
-            if (onDelete) {
-                onDelete(url);
-            }
-            window.location.reload();
-        } else {
-            console.error('Failed to delete password:', response.statusText);
+      const encodedUrl = encodeURIComponent(url)
+      const response = await fetch(`/api/passwords/delete/${encodedUrl}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: loginUsername,
+        }),
+      })
+
+      if (response.ok) {
+        console.log('Password deleted successfully:', url)
+
+        if (onDelete) {
+          onDelete(url)
         }
+        window.location.reload()
+      } else {
+        console.error('Failed to delete password:', response.statusText)
+      }
     } catch (error) {
-        console.error('Error deleting password:', error);
+      console.error('Error deleting password:', error)
     }
-};
-
-
+  }
 
   const handleUpdate = async () => {
     if (onUpdate && newPassword.trim() !== '') {
-        try {
-          const encodedUrl = encodeURIComponent(url);
-          const response = await fetch(`/api/passwords/update/${encodedUrl}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    password: newPassword,
-                    username: loginUserName, 
-                }),
-            });
+      try {
+        const encodedUrl = encodeURIComponent(url)
+        const response = await fetch(`/api/passwords/update/${encodedUrl}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            password: newPassword,
+            username: loginUsername,
+          }),
+        })
 
-            if (response.ok) {
-                const updatedPassword = await response.json();
-                onUpdate(url, password, updatedPassword.lastUpdatedTime);
-                setNewPassword('');
-                setUpdateSuccess(true);
-                setTimeout(() => {
-                  window.location.reload();
-              }, 500); 
-            } else {
-                console.error('Failed to update password:', response.statusText);
-                alert('Failed to update password. Please try again later.');
-            }
-        } catch (error) {
-            console.error('Error updating password:', error);
-            alert('An error occurred while updating the password.');
+        if (response.ok) {
+          const updatedPassword = await response.json()
+          onUpdate(url, password, updatedPassword.lastUpdatedTime)
+          setNewPassword('')
+          setUpdateSuccess(true)
+          setTimeout(() => {
+            window.location.reload()
+          }, 500)
+        } else {
+          console.error('Failed to update password:', response.statusText)
+          alert('Failed to update password. Please try again later.')
         }
-       }
-      };
-
-
+      } catch (error) {
+        console.error('Error updating password:', error)
+        alert('An error occurred while updating the password.')
+      }
+    }
+  }
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(password)
@@ -111,7 +108,7 @@ function PasswordStorageFile({
       return
     }
 
-    if (shareUsername === loginUserName) {
+    if (shareUsername === loginUsername) {
       setInfoMessage('Cannot share password with yourself!')
       return
     }
@@ -136,7 +133,7 @@ function PasswordStorageFile({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          senderUserName: loginUserName,
+          senderUserName: loginUsername,
           // receiverUserName: shareUsername,
           serviceUrl: url,
           sharingTime: new Date(),
@@ -223,8 +220,9 @@ function PasswordStorageFile({
             marginTop: '8px',
           }}
         >
-          Last Updated: {lastUpdated}
+          Last Updated: {lastUpdatedTime}
         </p>
+        <button onClick={handleUpdate}>Update</button>
         {/* Show share input if user clicks share */}
         {showShareInput && (
           <div
@@ -258,6 +256,14 @@ function PasswordStorageFile({
       </div>
     </div>
   )
+}
+
+PasswordStorageFile.propTypes = {
+  url: PropTypes.string.isRequired,
+  password: PropTypes.string.isRequired,
+  lastUpdatedTime: PropTypes.string.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
 }
 
 export default PasswordStorageFile

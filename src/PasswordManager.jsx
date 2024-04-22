@@ -4,8 +4,8 @@ import PasswordStorageFile from './PasswordStorageFile';
 import { UserContext } from './Context';
 import { useNavigate } from 'react-router-dom';
 
-function PasswordManager({ isAuthenticated, handleLogout }) {
-  const { loginUserName } = useContext(UserContext); 
+function PasswordManager() {
+  const { loginUsername } = useContext(UserContext); 
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +17,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   const [passwords, setPasswords] = useState([]);
   const [sharedUsername, setSharedUsername] = useState('');
   const [showError, setShowError] = useState(false);
-  const [sharingRequestSent, setSharingRequestSent] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPasswords, setFilteredPasswords] = useState([]);
@@ -37,13 +36,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
     }
 
     return generatedPassword;
-  };
-
-  const handleLogoutClick = () => {
-    if (handleLogout) {
-      handleLogout();
-    }
-    navigate('/login');
   };
 
   const isValidUrl = (url) => {
@@ -73,7 +65,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
       return;
     }
   
-    if (!loginUserName || !loginUserName.trim()) { 
+    if (!loginUsername || !loginUsername.trim()) { 
       alert('Invalid username');
       return;
     }
@@ -111,7 +103,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         const requestBody = JSON.stringify({
           serviceName: url,
           password: password,
-          username: loginUserName, 
+          username: loginUsername, 
         });
   
         const response = await fetch('/api/passwords/add', {
@@ -133,7 +125,7 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
                 },
                 body: JSON.stringify({
                   password: password,
-                  username: loginUserName,
+                  username: loginUsername,
                 }),
               });
         
@@ -198,26 +190,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
     setPasswords(updatedPasswords);
   };
 
-  const handleShareRequest = () => {
-    if (!sharedUsername.trim() || sharedUsername === isAuthenticated) {
-      setShowError(true);
-      return;
-    }
-
-    setSharingRequestSent(true);
-  };
-
-  const handleAcceptRequest = () => {
-    setSharingRequestSent(false); // Reset sharing request status
-    setSharedUsername(''); // Clear shared username
-    setSharingRequestAccepted(true);
-  };
-
-  const handleRejectRequest = () => {
-    setSharedUsername('');
-    setSharingRequestSent(false);
-  };
-
   useEffect(() => {
     if (passwords && Array.isArray(passwords)) {
       const filtered = passwords.filter(password => 
@@ -227,35 +199,50 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
       setFilteredPasswords(filtered);
     }
   }, [searchQuery, passwords]);
-  
-  
 
-  useEffect(() => {
-    const authenticate = async () => {
-      try {
-        if (loginUserName) { 
-          const response = await fetch(`/api/passwords?username=${loginUserName}`); 
-          if (response.ok) {
-            const data = await response.json();
-            setPasswords(data);
-          } else {
-            console.error('Failed to fetch passwords:', response.statusText);
-          }
-        } else {
-          setPasswords([]);
-        }
-      } catch (error) {
-        console.error('An error occurred while authenticating:', error);
+  const [messages, setMessages] = useState([]);
+  const handleRejectSharing = async (message) => {
+    try {
+      const response = await fetch(`/api/messages/delete/${message.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const updatedMessages = messages.filter(item => item.id !== message.id);
+        setMessages(updatedMessages);
+      } else {
+        console.error('Failed to reject sharing:', response.statusText);
       }
-    };
+    } catch (error) {
+      console.error('Error rejecting sharing:', error);
+    }
+  }
 
-    authenticate();
-  }, [loginUserName, submitSuccess]); 
+  const handleAcceptSharing = async (message) => {
+    try {
+      const response = await fetch('/api/messages/accept', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
+      });
+
+      if (response.ok) {
+        const updatedMessages = messages.filter(item => item.id !== message.id);
+        setMessages(updatedMessages);
+      } else {
+        console.error('Failed to accept sharing:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error accepting sharing:', error);
+    }
+  }
 
   return (
     <div className="password-container">
       <h2 className="password-title">Password Manager</h2>
-      <p>Welcome to the password manager page, {loginUserName}!</p> 
+      <p>Welcome to the password manager page, {loginUsername}!</p> 
       <div className="password-input-row">
         <input
           type="text"
@@ -328,9 +315,9 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         {filteredPasswords.map((password, index) => (
           <PasswordStorageFile
             key={index}
-            url={password.serviceName}
+            url={password.url}
             password={password.password}
-            lastUpdated={new Date(password.lastUpdateTime).toLocaleString('en-US', {
+            lastUpdatedTime={new Date(password.lastUpdateTime).toLocaleString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
