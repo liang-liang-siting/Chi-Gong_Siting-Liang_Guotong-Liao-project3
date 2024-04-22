@@ -17,9 +17,9 @@ function PasswordManager() {
   const [length, setLength] = useState(8)
   const [passwords, setPasswords] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [filteredPasswords, setFilteredPasswords] = useState([])
   const [useSecurePassword, setUseSecurePassword] = useState(false)
 
+  // Bonus Point: Generate a secure password
   const generateSecurePassword = (length) => {
     const charset =
       'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-='
@@ -86,12 +86,14 @@ function PasswordManager() {
   }
 
   const handleAddPasswordFile = async () => {
+    console.log(url, password, loginUsername)
     if (!url.trim()) {
+      console.log(url.trim())
       alert('Please enter a URL')
       return
     }
     if (!isValidUrl(url)) {
-      alert('Please enter a valid URL')
+      alert('Please enter a valid URL, such as https://example.com')
       return
     }
     if (!loginUsername || !loginUsername.trim()) {
@@ -100,6 +102,10 @@ function PasswordManager() {
     }
     if (!password.trim()) {
       alert('Please enter a password')
+      return
+    }
+    if (passwords.some((item) => item.url === url)) {
+      alert('URL already exists')
       return
     }
     try {
@@ -126,65 +132,13 @@ function PasswordManager() {
     }
   }
 
-  const handleDeletePasswordFile = async (passwordFile) => {
-    try {
-      const response = await fetch('/api/passwords/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(passwordFile),
-      })
-      if (response.ok) {
-        await fetchPasswords()
-        console.log('Password deleted successfully')
-      } else {
-        console.error('Failed to delete password:', response.statusText)
-      }
-    } catch (error) {
-      console.error('Error deleting password:', error)
-    }
-  }
-
-  const handleUpdatePasswordFile = async (passwordFile) => {
-    try {
-      const response = await fetch('/api/passwords/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(passwordFile),
-      })
-
-      if (response.ok) {
-        await fetchPasswords()
-        console.log('Password updated successfully')
-      } else {
-        console.error('Failed to update password:', response.statusText)
-      }
-    } catch (error) {
-      console.error('Error updating password:', error)
-    }
-  }
-
-  // Filter passwords based on search query
-  useEffect(() => {
-    if (passwords && Array.isArray(passwords)) {
-      const filtered = passwords.filter(
-        (password) =>
-          password.serviceName &&
-          password.serviceName.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      setFilteredPasswords(filtered)
-    }
-  }, [searchQuery, passwords])
-
   const fetchPasswords = useCallback(async () => {
     if (!loginUsername) return
     try {
       const response = await fetch(`/api/passwords/${loginUsername}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('Passwords:', data)
         setPasswords(data)
       } else {
         if (response.status === 401) {
@@ -203,11 +157,18 @@ function PasswordManager() {
     fetchPasswords()
   }, [fetchPasswords])
 
+  // Bonus Point: Password search
+  const filteredPasswords = passwords?.filter(
+    (password) =>
+      password.url &&
+      password.url.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   // messages section
   const [messages, setMessages] = useState([])
   const handleRejectSharing = async (message) => {
     try {
-      const response = await fetch(`/api/messages/delete/${message.id}`, {
+      const response = await fetch(`/api/message/delete/${message.id}`, {
         method: 'DELETE',
       })
       if (response.ok) {
@@ -225,7 +186,7 @@ function PasswordManager() {
 
   const handleAcceptSharing = async (message) => {
     try {
-      const response = await fetch('/api/messages/accept', {
+      const response = await fetch('/api/message/accept', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,6 +199,7 @@ function PasswordManager() {
           (item) => item.id !== message.id
         )
         setMessages(updatedMessages)
+        await fetchPasswords()
       } else {
         console.error('Failed to accept sharing:', response.statusText)
       }
@@ -250,9 +212,10 @@ function PasswordManager() {
     const messageInterval = setInterval(() => {
       const fetchMessages = async () => {
         try {
-          const response = await fetch(`/api/messages/${loginUsername}`)
+          const response = await fetch(`/api/message/${loginUsername}`)
           if (response.ok) {
             const data = await response.json()
+            // console.log('Messages:', data);
             setMessages(data)
           } else {
             console.error('Failed to fetch messages:', response.statusText)
@@ -355,10 +318,10 @@ function PasswordManager() {
         </button>
       </div>
       <div className='password-storage-section'>
-        <h3>Password Storage Files:</h3>
+        <h3>Password Files:</h3>
         <input
           type='text'
-          placeholder='Search by service name'
+          placeholder='Search by URL'
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className='search-bar'
@@ -367,45 +330,46 @@ function PasswordManager() {
           <PasswordStorageFile
             key={index}
             url={password.url}
+            username={password.username}
             password={password.password}
-            lastUpdatedTime={new Date(password.lastUpdateTime).toLocaleString(
-              'en-US',
-              {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-                timeZoneName: 'short',
-              }
-            )}
-            onDelete={handleDeletePasswordFile}
-            onUpdate={handleUpdatePasswordFile}
+            lastUpdatedTime={password.lastUpdateTime}
+            fetchPasswords={fetchPasswords}
           />
         ))}
       </div>
       {/* Messages section */}
-      <div className='messages-section'>
-        <h3>Sharing Requests:</h3>
-        <ul>
-          {messages.map((message, index) => (
-            <li key={index}>
-              <div>
-                <strong>{message.senderUserName}</strong> wants to share the
-                password of <strong>{message.serviceUrl}</strong> with you.
-              </div>
-              <button onClick={() => handleRejectSharing(message.serviceUrl)}>
-                Reject
-              </button>
-              <button onClick={() => handleAcceptSharing(message.serviceUrl)}>
-                Accept
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {messages.length > 0 && (
+        <div className='messages-section'>
+          <ul className='message-list'>
+            {messages.map((message, index) => (
+              <li key={index} className='message-card'>
+                <div className='message-header'>
+                  <h4>Sharing Request</h4>
+                  <p>
+                    A user wants to share a password with you.
+                  </p>
+                </div>
+                <div className='message-content'>
+                  <p>
+                    <strong>Username:</strong> {message.senderUsername}
+                  </p>
+                  <p>
+                    <strong>URL:</strong> {message.url}
+                  </p>
+                </div>
+                <div className='message-actions'>
+                  <button onClick={() => handleRejectSharing(message)}>
+                    Reject
+                  </button>
+                  <button onClick={() => handleAcceptSharing(message)}>
+                    Accept
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

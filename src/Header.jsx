@@ -39,6 +39,11 @@ export default function Header() {
           setLoginUsername(data.username)
           console.log('Authenticated as', data.username)
         } else {
+          if (location.pathname === '/') {
+            return
+          } else if (!['/login', '/signup'].includes(location.pathname)) {
+            navigate('/login')
+          }
           console.log('Not authenticated')
         }
       } catch (error) {
@@ -46,7 +51,7 @@ export default function Header() {
       }
     }
     authenticate()
-  }, [loginUsername, setLoginUsername])
+  }, [loginUsername, setLoginUsername, navigate, location.pathname])
 
   return (
     <div className='header'>

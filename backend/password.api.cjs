@@ -21,40 +21,40 @@ router.get('/:username', authHandler, async function(request, response) {
 
 
 router.post('/add', async function(request, response) {
-    const { serviceName, password, username } = request.body; 
+    const { url, password, username } = request.body; 
 
     try {
-        if (!serviceName || !password || !username) {
+        if (!url || !password || !username) {
             return response.status(400).json({ message: "Missing serviceName, password, or username." });
         }
 
-        const existingPassword = await PasswordService.getServiceByName(serviceName, username);
+        const existingPassword = await PasswordService.getPasswordByName(url, username);
         if (existingPassword) {
             return response.status(409).json({ message: "URL already exists." });
         }
 
         const serviceToAdd = {
-            serviceName: serviceName,
+            url: url,
             password: password,
             username: username, 
             lastUpdateTime: new Date().toLocaleString()
         };
 
-        await PasswordService.insertService(serviceToAdd);
-        return response.status(201).json({ message: "Password added successfully", serviceName });
+        await PasswordService.insertPassword(serviceToAdd);
+        return response.status(201).json({ message: "Password added successfully", serviceName: url });
     } catch (error) {
         console.log(error);
         return response.status(500).json({ message: "An error occurred while adding password." });
     }
 });
 
-router.put('/update/:serviceName', async function(request, response) {
-    const serviceName = decodeURIComponent(request.params.serviceName); 
-    const newPassword = request.body.password;
+router.put('/update', async function(request, response) {
+    // const serviceName = decodeURIComponent(request.params.serviceName); 
+    const url = request.body.url;
     const username = request.body.username; 
 
     try {
-        const existingPassword = await PasswordService.getServiceByName(serviceName, username);
+        const existingPassword = await PasswordService.getPasswordByName(url, username);
         if (!existingPassword) {
             return response.status(404).json({ message: "Password not found." });
         }
@@ -63,8 +63,7 @@ router.put('/update/:serviceName', async function(request, response) {
             return response.status(403).json({ message: "You are not authorized to update this password." });
         }
 
-        const updatedPassword = await PasswordService.updateService(serviceName, newPassword, username); 
-        updatedPassword.lastUpdateTime = Date.now(); 
+        const updatedPassword = await PasswordService.updatePassword(request.body); 
         return response.json({ message: 'Password updated successfully', password: updatedPassword });
     } catch (error) {
         console.log(error);
@@ -74,12 +73,11 @@ router.put('/update/:serviceName', async function(request, response) {
 
 
 router.delete('/delete', async function(request, response) {
-    // const url = decodeURIComponent(request.params.serviceName);
     const username = request.body.username; 
     const url = request.body.url;
 
     try {
-        const existingPassword = await PasswordService.getServiceByName(url, username);
+        const existingPassword = await PasswordService.getPasswordByName(url, username);
         if (!existingPassword) {
             return response.status(404).json({ message: "Password not found." });
         }
@@ -88,7 +86,7 @@ router.delete('/delete', async function(request, response) {
             return response.status(403).json({ message: "You are not authorized to delete this password." });
         }
 
-        await PasswordService.deleteService(url, username); // Pass username as argument
+        await PasswordService.deletePassword(url, username); // Pass username as argument
         return response.json({ message: 'Password deleted successfully' });
     } catch (error) {
         console.log(error);

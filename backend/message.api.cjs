@@ -37,11 +37,7 @@ router.post('/accept', async function(request, response) {
         const senderUsername = request.body.senderUsername;
         const receiverUsername = request.body.receiverUsername;
         const passwordEntry = await PasswordService.getPasswordByName(url, senderUsername);
-        const newPassWordEntry = {
-            ...passwordEntry,
-            sharingWith: [...passwordEntry.sharingWith, receiverUsername],
-        };
-        await PasswordService.updatePassword(newPassWordEntry);
+        await PasswordService.updateSharedWith(url, senderUsername, [...passwordEntry.sharedWith, receiverUsername]);
         // delete the message
         await MessageService.deleteMessage(id);
         response.status(200).json({ message: 'Password shared successfully' });

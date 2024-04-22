@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import { useState, useEffect, useContext } from 'react'
+import { useState, useContext } from 'react'
 import { UserContext } from './Context'
 import CopyIcon from './assets/copy.svg?react'
 import ShareIcon from './assets/share.svg?react'
@@ -9,79 +9,78 @@ import './passwordStorageFile.css'
 
 function PasswordStorageFile({
   url,
+  username,
   password,
   lastUpdatedTime,
-  onDelete,
-  onUpdate,
+  fetchPasswords,
 }) {
   const { loginUsername } = useContext(UserContext)
-  const [newPassword, setNewPassword] = useState('')
+  const [newPassword, setNewPassword] = useState(password)
   const [isEditing, setIsEditing] = useState(false)
-  const [updateSuccess, setUpdateSuccess] = useState(false) // State to track password update success
-
   const [shareUsername, setShareUsername] = useState('')
   const [showShareInput, setShowShareInput] = useState(false)
   const [infoMessage, setInfoMessage] = useState('') // State to store info message
 
-  const handleDelete = async () => {
+  const handleUpdate = async () => {
+    if (!newPassword.trim()) {
+      alert('Password cannot be empty!')
+      return
+    }
+    if (username !== loginUsername) {
+      alert('You are not authorized to update this password!')
+      return
+    }
     try {
-      const encodedUrl = encodeURIComponent(url)
-      const response = await fetch(`/api/passwords/delete/${encodedUrl}`, {
-        method: 'DELETE',
+      const response = await fetch('/api/passwords/update', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          url,
+          password: newPassword,
           username: loginUsername,
         }),
       })
 
       if (response.ok) {
-        console.log('Password deleted successfully:', url)
+        await fetchPasswords()
+        console.log('Password updated successfully')
+        setIsEditing(false)
+        setInfoMessage('Password updated successfully')
+        setTimeout(() => {
+          setInfoMessage('')
+        }, 2000)
+      } else {
+        console.error('Failed to update password:', response.statusText)
+        alert('Failed to update password. Please try again later.')
+      }
+    } catch (error) {
+      console.error('Error updating password:', error)
+      alert('An error occurred while updating the password.')
+    }
+  }
 
-        if (onDelete) {
-          onDelete(url)
-        }
-        window.location.reload()
+  const handleDelete = async () => {
+    try {
+      const response = await fetch('/api/passwords/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url,
+          username: loginUsername,
+        }),
+      })
+      if (response.ok) {
+        await fetchPasswords()
+        console.log('Password deleted successfully')
       } else {
         console.error('Failed to delete password:', response.statusText)
       }
     } catch (error) {
       console.error('Error deleting password:', error)
-    }
-  }
-
-  const handleUpdate = async () => {
-    if (onUpdate && newPassword.trim() !== '') {
-      try {
-        const encodedUrl = encodeURIComponent(url)
-        const response = await fetch(`/api/passwords/update/${encodedUrl}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            password: newPassword,
-            username: loginUsername,
-          }),
-        })
-
-        if (response.ok) {
-          const updatedPassword = await response.json()
-          onUpdate(url, password, updatedPassword.lastUpdatedTime)
-          setNewPassword('')
-          setUpdateSuccess(true)
-          setTimeout(() => {
-            window.location.reload()
-          }, 500)
-        } else {
-          console.error('Failed to update password:', response.statusText)
-          alert('Failed to update password. Please try again later.')
-        }
-      } catch (error) {
-        console.error('Error updating password:', error)
-        alert('An error occurred while updating the password.')
-      }
     }
   }
 
@@ -114,7 +113,7 @@ function PasswordStorageFile({
     }
 
     try {
-      const response = await fetch(`/api/user/${shareUsername}`)
+      const response = await fetch(`/api/users/${shareUsername}`)
 
       if (!response.ok) {
         console.error('Failed to fetch user:', response.statusText)
@@ -133,15 +132,19 @@ function PasswordStorageFile({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          senderUserName: loginUsername,
-          // receiverUserName: shareUsername,
-          serviceUrl: url,
+          senderUsername: loginUsername,
+          receiverUsername: shareUsername,
+          url: url,
           sharingTime: new Date(),
         }),
       })
 
       if (messageResponse.ok) {
         console.log('Password shared successfully:', shareUsername)
+        setInfoMessage(`Password shared with ${shareUsername}!`)
+        setTimeout(() => {
+          setInfoMessage('')
+        }, 2000)
       } else {
         console.error('Failed to share password:', messageResponse.statusText)
         setInfoMessage(`Failed to share password with ${shareUsername}!`)
@@ -166,12 +169,15 @@ function PasswordStorageFile({
           <button onClick={toggleShareInput} title='Share Password'>
             <ShareIcon />
           </button>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            title='Update Password'
-          >
-            <UpdateIcon />
-          </button>
+          {/* Show update icon only if user is the owner of the password */}
+          {username === loginUsername && (
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              title='Update Password'
+            >
+              <UpdateIcon />
+            </button>
+          )}
           <button onClick={handleDelete} title='Delete Password'>
             <DeleteIcon />
           </button>
@@ -196,13 +202,16 @@ function PasswordStorageFile({
           >
             Password:
           </span>
-          <div className='password-input'>
+          <div className='password-show'>
             {isEditing ? (
-              <input
-                type='text'
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
+              <>
+                <input
+                  type='text'
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <button onClick={handleUpdate}>Update</button>
+              </>
             ) : (
               <span>{password}</span>
             )}
@@ -220,9 +229,8 @@ function PasswordStorageFile({
             marginTop: '8px',
           }}
         >
-          Last Updated: {lastUpdatedTime}
+          Last Updated: {new Date(lastUpdatedTime).toLocaleString()}
         </p>
-        <button onClick={handleUpdate}>Update</button>
         {/* Show share input if user clicks share */}
         {showShareInput && (
           <div
@@ -240,8 +248,6 @@ function PasswordStorageFile({
             <button onClick={handleShareClick}>Share</button>
           </div>
         )}
-        {/* Show message when password update is successful */}
-        {updateSuccess && <p>Password updated successfully!</p>}
         {/* Show info message */}
         {infoMessage && (
           <p
@@ -260,10 +266,10 @@ function PasswordStorageFile({
 
 PasswordStorageFile.propTypes = {
   url: PropTypes.string.isRequired,
+  username: PropTypes.string.isRequired,
   password: PropTypes.string.isRequired,
   lastUpdatedTime: PropTypes.string.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
+  fetchPasswords: PropTypes.func.isRequired,
 }
 
 export default PasswordStorageFile

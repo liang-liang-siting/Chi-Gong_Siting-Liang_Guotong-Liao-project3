@@ -20,11 +20,11 @@ function deletePassword(url, username) {
     return PasswordModel.deleteOne({ url: url, username: username}).exec();
 }
 
-function getPasswordsByUsername(userName) {
+function getPasswordsByUsername(username) {
     return PasswordModel.find({ 
         $or: [
-            { userName: userName },
-            { sharedWith: userName }
+            { username: username },
+            { sharedWith: username }
         ]
     }).exec();
 }
@@ -34,9 +34,15 @@ function updatePassword(passwordEntry) {
     const { url, username } = passwordEntry;
     const updatedService = {
         ...passwordEntry,
-        lastUpdateTime: new Date()
+        lastUpdateTime: new Date(),
+        sharedWith: passwordEntry.sharedWith
     };
+    console.log(updatedService);
     return PasswordModel.findOneAndUpdate({ url: url, username: username }, updatedService, { new: true }).exec();
+}
+
+function updateSharedWith(url, username, sharedWith) {
+    return PasswordModel.findOneAndUpdate({ url: url, username: username }, { sharedWith: sharedWith }, { new: true }).exec();
 }
 
 module.exports = {
@@ -46,4 +52,5 @@ module.exports = {
     insertPassword, 
     getAllPassword,
     getPasswordsByUsername,
+    updateSharedWith,
 }
