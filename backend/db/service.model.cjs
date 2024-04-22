@@ -1,8 +1,7 @@
-const ServiceSchema = require('./service.schema.cjs');
+const { model } = require('mongoose');
+const serviceSchema = require('./service.schema.cjs');
 
-const model = require('mongoose').model;
-
-const ServiceModel = model('Service', ServiceSchema);
+const ServiceModel = model('Service', serviceSchema);
 
 function insertService(service) {
     return ServiceModel.create(service);
@@ -12,12 +11,12 @@ function getAllServices() {
     return ServiceModel.find().exec();
 }
 
-function getServiceByName(serviceName) {
-    return ServiceModel.findOne({ serviceName: serviceName }).exec();
+function getServiceByName(serviceName, username) {
+    return ServiceModel.findOne({ serviceName: serviceName, username: username }).exec();
 }
 
-function deleteService(serviceName) {
-    return ServiceModel.deleteOne({ serviceName: serviceName }).exec();
+function deleteService(serviceName, username) {
+    return ServiceModel.deleteOne({ serviceName: serviceName, username: username}).exec();
 }
 
 function getServiceByUserName(userName) {
@@ -29,14 +28,22 @@ function getServiceByUserName(userName) {
     }).exec();
 }
 
-function updateService(service) {
+function updateService(serviceName, password, username) {
     const updatedService = {
-        ...service,
-        lastUpdateTime: new Date() // Assuming you want to update lastUpdateTime to the current date
+        password: password,
+        lastUpdateTime: new Date()
     };
-    return ServiceModel.findOneAndUpdate({ serviceName: service.serviceName }, updatedService, { new: true }).exec();
+    return ServiceModel.findOneAndUpdate({ serviceName: serviceName, username: username }, updatedService, { new: true }).exec();
 }
 
+
+function getPasswordsByUsername(username) {
+    return ServiceModel.find({ username: username }).exec();
+}
+
+function getPasswordsSharedWithUser(username) {
+    return ServiceModel.find({ sharedWith: username }).exec();
+}
 
 module.exports = {
     getServiceByName,
@@ -44,5 +51,6 @@ module.exports = {
     updateService,
     insertService, 
     getAllServices,
-    getServiceByUserName,
+    getPasswordsByUsername,
+    getPasswordsSharedWithUser
 }

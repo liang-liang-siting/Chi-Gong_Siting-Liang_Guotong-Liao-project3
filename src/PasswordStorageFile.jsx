@@ -24,56 +24,70 @@ function PasswordStorageFile({
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(
-        `/api/passwords/delete/${encodeURIComponent(url)}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+        const encodedUrl = encodeURIComponent(url);
+        const response = await fetch(`/api/passwords/delete/${encodedUrl}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: loginUserName, 
+            }),
+        });
+    
+        if (response.ok) {
+            console.log('Password deleted successfully:', url);
+    
+            if (onDelete) {
+                onDelete(url);
+            }
+            window.location.reload();
+        } else {
+            console.error('Failed to delete password:', response.statusText);
         }
-      )
-
-      if (response.ok) {
-        // Password deleted successfully
-        console.log('Password deleted successfully:', url)
-        if (onDelete) onDelete(url)
-        window.location.reload() // Refresh screen after password deletion
-      } else {
-        console.error('Failed to delete password:', response.statusText)
-      }
     } catch (error) {
-      console.error('Error deleting password:', error)
+        console.error('Error deleting password:', error);
     }
-  }
+};
+
+
 
   const handleUpdate = async () => {
     if (onUpdate && newPassword.trim() !== '') {
-      try {
-        const response = await fetch(
-          `/api/passwords/update/${encodeURIComponent(url)}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newPassword: newPassword }),
-          }
-        )
+        try {
+          const encodedUrl = encodeURIComponent(url);
+          const response = await fetch(`/api/passwords/update/${encodedUrl}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    password: newPassword,
+                    username: loginUserName, 
+                }),
+            });
 
-        if (response.ok) {
-          const updatedPassword = await response.json()
-          onUpdate(url, newPassword, updatedPassword.lastUpdated)
-          setNewPassword('')
-          setIsEditing(false)
-          setUpdateSuccess(true) // Set update success status to true
-          setTimeout(() => setUpdateSuccess(false), 1000) // Reset update success status after 1 second
-        } else {
-          console.error('Failed to update password:', response.statusText)
+            if (response.ok) {
+                const updatedPassword = await response.json();
+                onUpdate(url, password, updatedPassword.lastUpdatedTime);
+                setNewPassword('');
+                setUpdateSuccess(true);
+                setTimeout(() => {
+                  window.location.reload();
+              }, 500); 
+            } else {
+                console.error('Failed to update password:', response.statusText);
+                alert('Failed to update password. Please try again later.');
+            }
+        } catch (error) {
+            console.error('Error updating password:', error);
+            alert('An error occurred while updating the password.');
         }
-      } catch (error) {
-        console.error('Error updating password:', error)
-      }
-    }
-  }
+       }
+      };
 
-  // Function to copy password to clipboard
+
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(password)
   }

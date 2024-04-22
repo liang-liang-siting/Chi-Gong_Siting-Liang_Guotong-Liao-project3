@@ -19,7 +19,6 @@ router.get('/', authHandler, async function(request, response) {
 // TODO: delete this method, seems unnecessary
 router.get('/:username', authHandler, function(request, response) {
     const username = request.params.username;
-    // const user = users.find(user => user.username === username);
     const user = UserModel.getUserByUsername(username);
 
     if (user) {
@@ -36,7 +35,6 @@ router.post('/login', async function(request, response) {
         return response.status(400).json({ message: "Missing username or password." });
     }
 
-    // const user = users.find(u => u.username === username && u.password === password);
     const user = await UserModel.getUserByUsername(username);
     console.log(user);
 
