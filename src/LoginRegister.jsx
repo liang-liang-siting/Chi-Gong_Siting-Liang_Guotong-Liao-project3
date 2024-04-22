@@ -6,8 +6,7 @@ import './index.css'
 
 function LoginRegister({ isRegistering }) {
   const navigate = useNavigate()
-  const { loginUserName, setLoginUserName } = useContext(UserContext)
-
+  const { loginUsername, setLoginUsername } = useContext(UserContext)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -18,7 +17,7 @@ function LoginRegister({ isRegistering }) {
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    if (loginUserName) {
+    if (loginUsername) {
       console.log('User is already logged in.')
       return
     }
@@ -43,7 +42,7 @@ function LoginRegister({ isRegistering }) {
       if (response.ok) {
         // Handle successful login
         console.log('Login successful')
-        setLoginUserName(data.username)
+        setLoginUsername(data.username)
         navigate('/password')
       } else {
         // Handle login failure

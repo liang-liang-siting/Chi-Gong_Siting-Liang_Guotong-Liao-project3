@@ -1,23 +1,23 @@
-import messageSchema from "./message.schema.cjs";
+const MessageSchema = require('./message.schema.cjs');
 
 const model = require('mongoose').model;
 
-const MessageModel = model('Message', messageSchema);
+const MessageModel = model('Message', MessageSchema);
 
 function insertMessage(message) {
     return MessageModel.create(message);
 }
 
-function getMessageByReceiverUserName(receiverUserName) {
-    return MessageModel.find({ receiverUserName: receiverUserName }).exec();
+function getMessageByReceiverUserName(receiverUsername) {
+    return MessageModel.find({ receiverUsername: receiverUsername }).exec();
 }
 
-function deleteMessageByServiceUrl(serviceUrl) {
-    return MessageModel.deleteMany({ serviceUrl: serviceUrl }).exec();
+function deleteMessage(id) {
+    return MessageModel.deleteMany({ id: id }).exec();
 }
 
 module.exports = {
     getMessageByReceiverUserName,
-    deleteMessageByServiceUrl,
+    deleteMessage,
     insertMessage,
 }

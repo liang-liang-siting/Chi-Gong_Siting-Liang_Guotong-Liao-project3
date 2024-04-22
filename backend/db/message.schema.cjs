@@ -1,18 +1,21 @@
 const Schema = require('mongoose').Schema;
 
 module.exports = new Schema({
-    // for identifying the password
-    serviceUrl: {
+    id: {
+        type: String,
+        required: true,
+    },
+    url: {
         type: String,
         required: true,
     },
     // display name of the sender
-    senderUserName: {
+    senderUsername: {
         type: String,
         required: true,
     },
     // display name of the receiver
-    receiverUserName: {
+    receiverUsername: {
         type: String,
         required: true,
     },

@@ -16,7 +16,6 @@ router.get('/', authHandler, async function(request, response) {
     response.json(users);
 });
 
-// TODO: delete this method, seems unnecessary
 router.get('/:username', authHandler, function(request, response) {
     const username = request.params.username;
     const user = UserModel.getUserByUsername(username);

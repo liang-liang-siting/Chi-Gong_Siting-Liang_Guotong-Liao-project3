@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const usersRouter = require('./backend/user.api.cjs')
 const passwordsRouter = require('./backend/password.api.cjs')
+const messageRouter = require('./backend/message.api.cjs')
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser')
 
@@ -27,6 +28,7 @@ app.use(cookieParser());
 
 app.use('/api/users', usersRouter);
 app.use('/api/passwords', passwordsRouter);
+app.use('/api/message', messageRouter);
 
 app.get('/', function(req, res) {
     res.send("This is the FIRST GET request")
