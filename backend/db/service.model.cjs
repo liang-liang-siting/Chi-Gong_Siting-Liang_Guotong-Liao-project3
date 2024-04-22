@@ -11,22 +11,30 @@ function getAllServices() {
     return ServiceModel.find().exec();
 }
 
-function getServiceByName(serviceName) {
-    return ServiceModel.findOne({ serviceName: serviceName }).exec();
+function getServiceByName(serviceName, username) {
+    return ServiceModel.findOne({ serviceName: serviceName, username: username }).exec();
 }
 
-function deleteService(serviceName) {
-    return ServiceModel.deleteOne({ serviceName: serviceName }).exec();
+function deleteService(serviceName, username) {
+    return ServiceModel.deleteOne({ serviceName: serviceName, username: username}).exec();
 }
 
-function updateService(serviceName, password) {
+function updateService(serviceName, password, username) {
     const updatedService = {
         password: password,
         lastUpdateTime: new Date()
     };
-    return ServiceModel.findOneAndUpdate({ serviceName: serviceName }, updatedService, { new: true }).exec();
+    return ServiceModel.findOneAndUpdate({ serviceName: serviceName, username: username }, updatedService, { new: true }).exec();
 }
 
+
+function getPasswordsByUsername(username) {
+    return ServiceModel.find({ username: username }).exec();
+}
+
+function getPasswordsSharedWithUser(username) {
+    return ServiceModel.find({ sharedWith: username }).exec();
+}
 
 module.exports = {
     getServiceByName,
@@ -34,4 +42,6 @@ module.exports = {
     updateService,
     insertService, 
     getAllServices,
+    getPasswordsByUsername,
+    getPasswordsSharedWithUser
 }

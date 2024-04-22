@@ -1,75 +1,78 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './passwordStorageFile.css';
+import { UserContext } from './Context';
 
 function PasswordStorageFile({ url, password, lastUpdated, onDelete, onUpdate }) {
   const [newPassword, setNewPassword] = useState('');
   const [updateSuccess, setUpdateSuccess] = useState(false); 
-  
+  const { loginUserName } = useContext(UserContext); 
+
   const handleDelete = async () => {
     try {
-      const response = await fetch(`/api/passwords/delete/${encodeURIComponent(url)}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (response.ok) {
-        console.log('Password deleted successfully:', url); 
-  
-        if (onDelete) {
-          onDelete(url);
+        const encodedUrl = encodeURIComponent(url);
+        const response = await fetch(`/api/passwords/delete/${encodedUrl}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: loginUserName, 
+            }),
+        });
+    
+        if (response.ok) {
+            console.log('Password deleted successfully:', url);
+    
+            if (onDelete) {
+                onDelete(url);
+            }
+            window.location.reload();
+        } else {
+            console.error('Failed to delete password:', response.statusText);
         }
-
-        window.location.reload();
-      } else {
-        console.error('Failed to delete password:', response.statusText);
-      }
     } catch (error) {
-      console.error('Error deleting password:', error);
+        console.error('Error deleting password:', error);
     }
-  };  
+};
+
+
 
   const handleUpdate = async () => {
     if (onUpdate && newPassword.trim() !== '') {
-      try {
-        const response = await fetch(`/api/passwords/update/${encodeURIComponent(url)}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            password: newPassword,
-          }),
-        });
-  
-        if (response.ok) {
-          const updatedPassword = await response.json();
-          onUpdate(url, password, updatedPassword.lastUpdatedTime);
-          setNewPassword('');
-          setUpdateSuccess(true);
-          setTimeout(() => {
-            setUpdateSuccess(false);
-          }, 1000);
-        } else {
-          console.error('Failed to update password:', response.statusText);
+        try {
+          const encodedUrl = encodeURIComponent(url);
+          const response = await fetch(`/api/passwords/update/${encodedUrl}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    password: newPassword,
+                    username: loginUserName, 
+                }),
+            });
+
+            if (response.ok) {
+                const updatedPassword = await response.json();
+                onUpdate(url, password, updatedPassword.lastUpdatedTime);
+                setNewPassword('');
+                setUpdateSuccess(true);
+                setTimeout(() => {
+                  window.location.reload();
+              }, 500); 
+            } else {
+                console.error('Failed to update password:', response.statusText);
+                alert('Failed to update password. Please try again later.');
+            }
+        } catch (error) {
+            console.error('Error updating password:', error);
+            alert('An error occurred while updating the password.');
         }
-      } catch (error) {
-        console.error('Error updating password:', error);
-      }
-    }
-  };
-  
+       }
+      };
 
-  useEffect(() => {
-    if (updateSuccess) {
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
-  }, [updateSuccess]);
 
-  // Function to copy password to clipboard
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(password);
   };

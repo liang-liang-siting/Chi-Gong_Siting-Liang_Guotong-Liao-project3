@@ -1,50 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import './passwordManager.css'; 
+import React, { useState, useEffect, useContext} from 'react';
+import './passwordManager.css';
 import PasswordStorageFile from './PasswordStorageFile';
+import { UserContext } from './Context';
 import { useNavigate } from 'react-router-dom';
-import crypto from 'crypto';
 
 function PasswordManager({ isAuthenticated, handleLogout }) {
+  const { loginUserName } = useContext(UserContext); 
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
   const [alphabet, setAlphabet] = useState(false);
   const [numerics, setNumerics] = useState(false);
   const [symbols, setSymbols] = useState(false);
-  const [length, setLength] = useState(8); // Default length
-  const [passwordFiles, setPasswordFiles] = useState([]);
+  const [length, setLength] = useState(8);
   const [passwords, setPasswords] = useState([]);
   const [sharedUsername, setSharedUsername] = useState('');
   const [showError, setShowError] = useState(false);
   const [sharingRequestSent, setSharingRequestSent] = useState(false);
-  const [sharingRequestAccepted, setSharingRequestAccepted] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPasswords, setFilteredPasswords] = useState([]);
-  const [useSecurePassword, setUseSecurePassword] = useState(false); 
+  const [useSecurePassword, setUseSecurePassword] = useState(false);
 
   const generateSecurePassword = (length) => {
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
     const charsetLength = charset.length;
-    let password = "";
-  
+    let generatedPassword = "";
+
     const randomValues = new Uint32Array(length);
     window.crypto.getRandomValues(randomValues);
-  
+
     for (let i = 0; i < length; i++) {
       const randomIndex = randomValues[i] % charsetLength;
-      password += charset[randomIndex];
+      generatedPassword += charset[randomIndex];
     }
-  
-    return password;
+
+    return generatedPassword;
   };
-  
+
   const handleLogoutClick = () => {
     if (handleLogout) {
-      handleLogout(); 
+      handleLogout();
     }
-    navigate('/login'); 
+    navigate('/login');
   };
 
   const isValidUrl = (url) => {
@@ -58,78 +57,116 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
 
   const handleToggleSecurePassword = () => {
     setUseSecurePassword(!useSecurePassword);
-
-    // If toggled to use secure password, generate one and set it directly to the password field
     if (!useSecurePassword) {
       const securePassword = generateSecurePassword(length);
       setPassword(securePassword);
-    } else {
-      // Reset password field if secure password is turned off
-      setPassword('');
     }
   };
 
   const handleSubmit = async () => {
-    // Validation checks
+
     if (!url.trim()) {
       alert('Please enter a URL');
       return;
-    } else if (!isValidUrl(url)) { // Validate URL format
+    } else if (!isValidUrl(url)) {
       alert('Please enter a valid URL');
       return;
     }
   
-    // If password is not provided, generate a random one
+    if (!loginUserName || !loginUserName.trim()) { 
+      alert('Invalid username');
+      return;
+    }
+  
     if (!password.trim()) {
-      // Check if at least one checkbox is checked
       if (!useSecurePassword && !alphabet && !numerics && !symbols) {
         alert('Please select at least one option for password generation');
         return;
       }
   
-      // Check if length is within the range of 4 to 50
       if (!useSecurePassword && (length < 4 || length > 50)) {
         alert('Password length must be between 4 and 50 characters');
         return;
       }
   
       if (useSecurePassword) {
-        return; // No need to generate a password here, already filled by handleToggleSecurePassword
+        const securePassword = generateSecurePassword(length);
+        setPassword(securePassword);
+      } else {
+        let generatedPassword = '';
+        const options = [];
+        if (alphabet) options.push('abcdefghijklmnopqrstuvwxyz');
+        if (numerics) options.push('0123456789');
+        if (symbols) options.push('!@#$%^&*()_+~`|}{[]:;?><,./-=');
+  
+        for (let i = 0; i < length; i++) {
+          const randomOption = options[Math.floor(Math.random() * options.length)];
+          generatedPassword += randomOption[Math.floor(Math.random() * randomOption.length)];
+        }
+  
+        setPassword(generatedPassword);
       }
-  
-      // Generate the random password based on selected options
-      let generatedPassword = '';
-      const options = [];
-      if (alphabet) options.push('abcdefghijklmnopqrstuvwxyz');
-      if (numerics) options.push('0123456789');
-      if (symbols) options.push('!@#$%^&*()_+~`|}{[]:;?><,./-=');
-  
-      for (let i = 0; i < length; i++) {
-        const randomOption = options[Math.floor(Math.random() * options.length)];
-        generatedPassword += randomOption[Math.floor(Math.random() * randomOption.length)];
-      }
-  
-      setPassword(generatedPassword);
     } else {
-      // If password is provided, proceed with storing the data
       try {
+        const requestBody = JSON.stringify({
+          serviceName: url,
+          password: password,
+          username: loginUserName, 
+        });
+  
         const response = await fetch('/api/passwords/add', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            serviceName: url,
-            password: password
-          }),
+          body: requestBody,
         });
   
-        if (response.ok) {
+        if (response.status === 409) {
+          const confirmUpdate = window.confirm('A password for this service already exists. Would you like to update it?');
+          if (confirmUpdate) {
+            try {
+              const updateResponse = await fetch(`/api/passwords/update/${encodeURIComponent(url)}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  password: password,
+                  username: loginUserName,
+                }),
+              });
+        
+              console.log('Update Response:', updateResponse);
+        
+              if (updateResponse.ok) {
+                console.log('Password updated successfully');
+                const updatedPassword = await updateResponse.json();
+                const updatedPasswords = passwords.map(p => p.serviceName === url ? updatedPassword : p);
+                setPasswords(updatedPasswords);
+                setUrl('');
+                setPassword('');
+                setSubmitSuccess(true);
+                setTimeout(() => {
+                  setSubmitSuccess(false);
+                }, 1000); 
+              } else {
+                console.error('Failed to update password:', updateResponse.statusText);
+                alert('An error occurred while updating the password');
+              }
+            } catch (error) {
+              console.error('Error updating password:', error);
+              alert('An error occurred while updating the password');
+            }
+          }
+
+        } else if (response.ok) {
           console.log('Password added successfully');
           setUrl('');
           setPassword('');
           setSubmitSuccess(true);
-          window.location.reload();
+          const data = await response.json();
+          setPasswords(prevPasswords => [...prevPasswords, data]);
           setTimeout(() => {
             setSubmitSuccess(false);
           }, 1000);
@@ -145,67 +182,80 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
   };
   
 
-  // Function to delete a password file entry
   const handleDeletePasswordFile = (urlToDelete) => {
-    const updatedFiles = passwordFiles.filter((file) => file.url !== urlToDelete);
-    setPasswordFiles(updatedFiles);
+    const updatedPasswords = passwords.filter(password => password.serviceName !== urlToDelete);
+    setPasswords(updatedPasswords);
   };
 
-  // Function to update a password file entry
-  const handleUpdatePasswordFile = (urlToUpdate) => {
-    // Logic to update the password file entry...
+  const handleUpdatePasswordFile = (urlToUpdate, newPassword, updatedLastUpdatedTime) => {
+    const updatedPasswords = passwords.map(password => {
+      if (password.serviceName === urlToUpdate) {
+        return { ...password, password: newPassword, lastUpdateTime: updatedLastUpdatedTime };
+      } else {
+        return password;
+      }
+    });
+    setPasswords(updatedPasswords);
   };
 
   const handleShareRequest = () => {
-    // Validation checks for sharing
     if (!sharedUsername.trim() || sharedUsername === isAuthenticated) {
       setShowError(true);
       return;
     }
 
-    // Simulate sharing request
     setSharingRequestSent(true);
   };
 
   const handleAcceptRequest = () => {
-    // Simulate accepting the sharing request
+    setSharingRequestSent(false); // Reset sharing request status
+    setSharedUsername(''); // Clear shared username
     setSharingRequestAccepted(true);
   };
 
   const handleRejectRequest = () => {
-    // Simulate rejecting the sharing request
     setSharedUsername('');
     setSharingRequestSent(false);
   };
 
   useEffect(() => {
-    const fetchPasswords = async () => {
-      try {
-        const response = await fetch('/api/passwords'); 
-        if (response.ok) {
-          const data = await response.json();
-          setPasswords(data);
-        } else {
-          console.error('Failed to fetch passwords:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error fetching passwords:', error);
-      }
-    };
+    if (passwords && Array.isArray(passwords)) {
+      const filtered = passwords.filter(password => 
+        password.serviceName && 
+        password.serviceName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredPasswords(filtered);
+    }
+  }, [searchQuery, passwords]);
   
-    fetchPasswords();
-  }, []);
+  
 
   useEffect(() => {
-    // Filter passwords based on search query
-    const filtered = passwords.filter(password => password.serviceName.toLowerCase().includes(searchQuery.toLowerCase()));
-    setFilteredPasswords(filtered);
-  }, [searchQuery, passwords]);
+    const authenticate = async () => {
+      try {
+        if (loginUserName) { 
+          const response = await fetch(`/api/passwords?username=${loginUserName}`); 
+          if (response.ok) {
+            const data = await response.json();
+            setPasswords(data);
+          } else {
+            console.error('Failed to fetch passwords:', response.statusText);
+          }
+        } else {
+          setPasswords([]);
+        }
+      } catch (error) {
+        console.error('An error occurred while authenticating:', error);
+      }
+    };
+
+    authenticate();
+  }, [loginUserName, submitSuccess]); 
 
   return (
     <div className="password-container">
       <h2 className="password-title">Password Manager</h2>
-      <p>Welcome to the password manager page!</p>
+      <p>Welcome to the password manager page, {loginUserName}!</p> 
       <div className="password-input-row">
         <input
           type="text"
@@ -225,7 +275,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           {showPassword ? "Hide" : "Show"}
         </button>
       </div>
-      {/* Secure Password Toggle */}
       <div className="password-input-row">
         <div>
           <label htmlFor="securePasswordToggle" className="secure-password-toggle-label">Use Secure Password:</label>
@@ -238,7 +287,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           />
         </div>
       </div>
-      {/* Checkbox Group */}
       {!useSecurePassword && (
         <div className="password-input-row">
           <div className="checkbox-group">
@@ -265,11 +313,9 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           <button onClick={handleSubmit} className="submit-button">Generate Password</button>
         </div>
       )}
-      {/* Submit button */}
       <div className="password-input-row">
         <button onClick={handleSubmit} className="submit-button">Submit</button>
       </div>
-      {/* Password storage file section */}
       <div className="password-storage-section">
         <h3>Password Storage Files:</h3>
         <input
@@ -279,12 +325,12 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="search-bar"
         />
-        {filteredPasswords.map((file, index) => (
+        {filteredPasswords.map((password, index) => (
           <PasswordStorageFile
             key={index}
-            url={file.serviceName}
-            password={file.password}
-            lastUpdated={new Date(file.lastUpdateTime).toLocaleString('en-US', {
+            url={password.serviceName}
+            password={password.password}
+            lastUpdated={new Date(password.lastUpdateTime).toLocaleString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -299,7 +345,6 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
           />
         ))}
       </div>
-      {/* Sharing section */}
       <div className="password-sharing-section">
         <h3>Share Passwords:</h3>
         <input
@@ -311,15 +356,13 @@ function PasswordManager({ isAuthenticated, handleLogout }) {
         <button onClick={handleShareRequest}>Share</button>
         {showError && <p>Error: Please enter a valid username</p>}
       </div>
-      {sharingRequestSent && !sharingRequestAccepted && (
+      {sharingRequestSent && (
         <div>
           <p>{sharedUsername} wants to share their passwords with you.</p>
           <button onClick={handleAcceptRequest}>Accept</button>
           <button onClick={handleRejectRequest}>Reject</button>
         </div>
       )}
-      {/* Logout button */}
-      {/* <button onClick={handleLogoutClick} className="logout-button">Logout</button> */}
     </div>
   );
 }
