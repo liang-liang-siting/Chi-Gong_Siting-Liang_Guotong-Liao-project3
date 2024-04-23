@@ -5,6 +5,7 @@ const passwordsRouter = require('./backend/password.api.cjs')
 const messageRouter = require('./backend/message.api.cjs')
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser')
+const port = process.env.PORT || 4000;
 
 const app = express();
 
@@ -38,6 +39,6 @@ app.put('/', function(request, response) {
     response.send("This is a PUT request")
 })
 
-app.listen(8001, function() {
-    console.log("Starting app now...")
-})
+app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+  })
