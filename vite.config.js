@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), svgr()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8001', // will be replaced when the backend service is deployed
+      '/api': `http://localhost:${process.env.PORT || 8001}`,
     }
   }
 })
