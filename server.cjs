@@ -39,6 +39,6 @@ app.put('/', function(request, response) {
     response.send("This is a PUT request")
 })
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`App listening on port ${port}`)
-  })
+app.listen(process.env.PORT || 4000, function() {
+    console.log("Starting server now...")
+})
