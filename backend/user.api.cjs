@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const UserModel = require('./db/user.model.cjs');
+const UserService = require('./db/user.model.cjs');
 const authHandler = require('./auth.cjs').authHandler;
 const getToken = require('./auth.cjs').getToken;
 
@@ -12,19 +12,15 @@ router.get('/authenticate', authHandler, async function(request, response) {
 
 // Used to get all users for password sharing
 router.get('/', authHandler, async function(request, response) {
-    const users = await UserModel.getAllUser();
+    const users = await UserService.getAllUser();
     response.json(users);
 });
 
-router.get('/:username', authHandler, function(request, response) {
+router.get('/:username', authHandler, async function(request, response) {
     const username = request.params.username;
-    const user = UserModel.getUserByUsername(username);
-
-    if (user) {
-        return response.json(user);
-    } else {
-        return response.status(404).json({ message: "User not found." });
-    }
+    const user = await UserService.getUserByUsername(username);
+    console.log(user);
+    response.json(user);
 });
 
 router.post('/login', async function(request, response) {
@@ -34,7 +30,7 @@ router.post('/login', async function(request, response) {
         return response.status(400).json({ message: "Missing username or password." });
     }
 
-    const user = await UserModel.getUserByUsername(username);
+    const user = await UserService.getUserByUsername(username);
     console.log(user);
 
     if (!user || user.password !== password) {
@@ -54,13 +50,13 @@ router.post('/register', async function(request, response) {
         return response.status(400).json({ message: "Missing username or password." });
     }
 
-    const existingUser = await UserModel.getUserByUsername(username);
+    const existingUser = await UserService.getUserByUsername(username);
     if (existingUser) {
       return response.status(400).json({ message: "Username already exists." });
     }
 
     try {
-      const registerResponse = await UserModel.insertUser({ username, password });
+      const registerResponse = await UserService.insertUser({ username, password });
       return response.status(200).json({ message: "Registration successful", username: username, response: registerResponse });
     } catch (error) {
       console.log(error);
