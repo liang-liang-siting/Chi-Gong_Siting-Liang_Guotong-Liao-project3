@@ -116,7 +116,7 @@ function LoginRegister({ isRegistering }) {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        <div className='password-input'>
+        <div className='password-input-login'>
           <input
             type={passwordVisible ? 'text' : 'password'}
             placeholder='Password'
@@ -128,7 +128,7 @@ function LoginRegister({ isRegistering }) {
           </button>
         </div>
         {isRegistering && (
-          <div className='password-input'>
+          <div className='password-input-login'>
             <input
               type={confirmPasswordVisible ? 'text' : 'password'}
               placeholder='Confirm Password'

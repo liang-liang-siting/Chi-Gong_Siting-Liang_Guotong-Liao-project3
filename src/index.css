@@ -183,3 +183,18 @@ h1 {
 .toggle-link:hover {
   text-decoration: underline;
 }
+
+.password-input-login {
+ width: 100%;
+ display: flex;
+ items-align: center;
+ gap: 10px;
+}
+
+.password-input-login input {
+  flex: 1;
+ }
+
+.password-input-login button {
+  margin-bottom: 10px;
+}
