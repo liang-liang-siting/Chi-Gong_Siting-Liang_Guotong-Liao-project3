@@ -164,25 +164,25 @@ function PasswordStorageFile({
 
   return (
     <div className='password-storage-file'>
-      <div className='top-right-icons'>
-        <div className='action-icons'>
-          <button onClick={toggleShareInput} title='Share Password'>
-            <ShareIcon />
-          </button>
-          {/* Show update icon only if user is the owner of the password */}
-          {username === loginUsername && (
+      {username === loginUsername && (
+        <div className='top-right-icons'>
+          <div className='action-icons'>
+            <button onClick={toggleShareInput} title='Share Password'>
+              <ShareIcon />
+            </button>
+            {/* Show update icon only if user is the owner of the password */}
             <button
               onClick={() => setIsEditing(!isEditing)}
               title='Update Password'
             >
               <UpdateIcon />
             </button>
-          )}
-          <button onClick={handleDelete} title='Delete Password'>
-            <DeleteIcon />
-          </button>
+            <button onClick={handleDelete} title='Delete Password'>
+              <DeleteIcon />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       <div>
         <p>
           <span
