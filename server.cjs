@@ -5,6 +5,7 @@ const passwordsRouter = require('./backend/password.api.cjs')
 const messageRouter = require('./backend/message.api.cjs')
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser')
+const path = require('path');
 
 const app = express();
 
@@ -30,14 +31,12 @@ app.use('/api/users', usersRouter);
 app.use('/api/passwords', passwordsRouter);
 app.use('/api/message', messageRouter);
 
-app.get('/', function(req, res) {
-    res.send("This is the FIRST GET request")
+let frontend_dir = path.join(__dirname, '.', 'dist');
+app.use(express.static(frontend_dir));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(frontend_dir, 'index.html'));
 });
 
-app.put('/', function(request, response) {
-    response.send("This is a PUT request")
-})
-
-app.listen(8001, function() {
+app.listen(process.env.PORT || 8001, function() {
     console.log("Starting app now...")
 })
