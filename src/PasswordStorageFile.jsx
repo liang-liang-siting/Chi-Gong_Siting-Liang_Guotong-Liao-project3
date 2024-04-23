@@ -122,9 +122,12 @@ function PasswordStorageFile({
       }
 
       const user = await response.json()
-
-      if (!user) {
+      console.log('User:', user);
+      if (!user || Object.keys(user).length === 0) {
         setInfoMessage(`User ${shareUsername} not found!`)
+        setTimeout(() => {
+          setInfoMessage('')
+        }, 2000)
         return
       }
 
