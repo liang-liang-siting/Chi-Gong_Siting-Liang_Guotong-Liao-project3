@@ -198,3 +198,52 @@ h1 {
 .password-input-login button {
   margin-bottom: 10px;
 }
+
+@media screen and (max-width: 600px) {
+  .landing-page {
+    padding: 20px;
+  }
+
+  .description {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  .creator {
+    margin-bottom: 20px;
+  }
+
+  .header {
+    padding: 10px 20px;
+    height: auto;
+  }
+
+  .header a {
+    padding: 5px 10px;
+  }
+
+  .auth-buttons {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  .user-menu {
+    margin-top: 10px;
+  }
+
+  .dropdown-content {
+    right: 0;
+  }
+
+  .login-register-container {
+    width: 80%;
+    max-width: none;
+    padding: 20px;
+  }
+
+  .password-input-login {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
